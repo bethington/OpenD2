@@ -1,16 +1,22 @@
 #pragma once
 #include "../D2Panel.hpp"
 
-/*
- *	Quest log panel - displays quest progress and objectives.
- *	Based on Ghidra analysis: UI/QuestLog.cpp in the original.
- */
+#define QUESTLOG_MAX_LINES 10
+
 class QuestLog : public D2Panel
 {
+private:
+    IRenderObject *m_titleText;
+    IRenderObject *m_lines[QUESTLOG_MAX_LINES];
+    bool m_bDirty;
+
+    void RefreshQuests();
+
 public:
     QuestLog();
     ~QuestLog();
 
+    void Show();
     void Draw() override;
     void Tick(DWORD dwDeltaMs) override;
 };

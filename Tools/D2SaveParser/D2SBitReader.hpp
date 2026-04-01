@@ -10,10 +10,10 @@ class D2SBitReader
 public:
 	D2SBitReader() : m_data(nullptr), m_size(0), m_bitPos(0) {}
 
-	D2SBitReader(const uint8_t* data, size_t sizeBytes)
+	D2SBitReader(const uint8_t *data, size_t sizeBytes)
 		: m_data(data), m_size(sizeBytes), m_bitPos(0) {}
 
-	void SetData(const uint8_t* data, size_t sizeBytes)
+	void SetData(const uint8_t *data, size_t sizeBytes)
 	{
 		m_data = data;
 		m_size = sizeBytes;
@@ -80,7 +80,7 @@ public:
 	}
 
 	// Get raw data pointer at current byte offset
-	const uint8_t* GetCurrentBytePtr() const
+	const uint8_t *GetCurrentBytePtr() const
 	{
 		return m_data + (m_bitPos / 8);
 	}
@@ -109,7 +109,7 @@ public:
 	}
 
 private:
-	const uint8_t* m_data;
+	const uint8_t *m_data;
 	size_t m_size;
 	size_t m_bitPos;
 };

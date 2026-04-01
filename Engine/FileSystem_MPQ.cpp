@@ -16,13 +16,13 @@ namespace FSMPQ
 	{
 		char szName[MAX_D2PATH];
 		char szPath[MAX_D2PATH];
-		D2MPQArchive* pArchive;
-		MPQSearchPath* pNext;
+		D2MPQArchive *pArchive;
+		MPQSearchPath *pNext;
 	};
 
 	// gpMPQSearchPaths is a stack, not a list.
 	// The first element of gpMPQSearchPaths is what gets searched for assets first (if no name is specified)
-	static MPQSearchPath* gpMPQSearchPaths;
+	static MPQSearchPath *gpMPQSearchPaths;
 
 	/*
 	 *	Initializes the MPQ filesystem.
@@ -52,7 +52,7 @@ namespace FSMPQ
 
 		// If a modpath is configured, scan it for additional MPQs.
 		// These are loaded last and therefore searched first.
-		const char* szModPath = FS::GetModPath();
+		const char *szModPath = FS::GetModPath();
 		if (szModPath[0] != '\0')
 		{
 			LoadDirectoryMPQs(szModPath);
@@ -64,8 +64,8 @@ namespace FSMPQ
 	 */
 	void Shutdown()
 	{
-		MPQSearchPath* pCurrent = gpMPQSearchPaths;
-		MPQSearchPath* pPrev = nullptr;
+		MPQSearchPath *pCurrent = gpMPQSearchPaths;
+		MPQSearchPath *pPrev = nullptr;
 
 		while (pCurrent != nullptr)
 		{
@@ -89,19 +89,19 @@ namespace FSMPQ
 	 *	Adds a single MPQ to the search path.
 	 *	@return	A pointer to the D2MPQArchive that got loaded
 	 */
-	D2MPQArchive* AddSearchPath(char* szMPQName, char* szMPQPath)
+	D2MPQArchive *AddSearchPath(char *szMPQName, char *szMPQPath)
 	{
 		if (szMPQName == nullptr || szMPQPath == nullptr)
 		{
 			return nullptr;
 		}
 
-		MPQSearchPath* pNew = (MPQSearchPath*)malloc(sizeof(MPQSearchPath));
+		MPQSearchPath *pNew = (MPQSearchPath *)malloc(sizeof(MPQSearchPath));
 		Log_ErrorAssertReturn(pNew != nullptr, nullptr);
 
-		pNew->pArchive = (D2MPQArchive*)malloc(sizeof(D2MPQArchive));
+		pNew->pArchive = (D2MPQArchive *)malloc(sizeof(D2MPQArchive));
 		if (pNew->pArchive == nullptr)
-		{	// couldn't allocate memory
+		{ // couldn't allocate memory
 			free(pNew->pArchive);
 			free(pNew);
 			Log_ErrorAssertReturn(!"Ran out of memory when adding MPQ search path.", nullptr);
@@ -111,7 +111,7 @@ namespace FSMPQ
 		D2Lib::strncpyz(pNew->szPath, szMPQPath, MAX_D2PATH);
 		MPQ::OpenMPQ(szMPQPath, szMPQName, pNew->pArchive);
 		if (pNew->pArchive == nullptr)
-		{	// couldn't open MPQ
+		{ // couldn't open MPQ
 			free(pNew->pArchive);
 			free(pNew);
 			return nullptr;
@@ -129,13 +129,13 @@ namespace FSMPQ
 	 *	This allows a mod folder to override base game data by layering
 	 *	its MPQs on top of the base game's MPQs.
 	 */
-	void LoadDirectoryMPQs(const char* szDirectory)
+	void LoadDirectoryMPQs(const char *szDirectory)
 	{
-		char szFiles[MAX_FILE_LIST_SIZE][MAX_D2PATH_ABSOLUTE]{ 0 };
+		char szFiles[MAX_FILE_LIST_SIZE][MAX_D2PATH_ABSOLUTE]{0};
 		int nFiles = 0;
 
 		// Scan the directory for .mpq files
-		Sys::ListFilesInDirectory((char*)szDirectory, "*.mpq", "", &nFiles, &szFiles);
+		Sys::ListFilesInDirectory((char *)szDirectory, "*.mpq", "", &nFiles, &szFiles);
 		if (nFiles <= 0)
 		{
 			Log::Print(PRIORITY_MESSAGE, "FSMPQ: No mod MPQs found in '%s'", szDirectory);
@@ -148,13 +148,13 @@ namespace FSMPQ
 		{
 			// szFiles[i] is "/filename.mpq" (originalPath="" + "/" + cFileName)
 			// Extract just the filename
-			char* szFileName = szFiles[i];
+			char *szFileName = szFiles[i];
 			if (szFileName[0] == '/' || szFileName[0] == '\\')
 				szFileName++;
 
 			// Skip if this MPQ filename matches one already loaded in the base set
 			bool bAlreadyLoaded = false;
-			MPQSearchPath* pCheck = gpMPQSearchPaths;
+			MPQSearchPath *pCheck = gpMPQSearchPaths;
 			while (pCheck != nullptr)
 			{
 				if (!D2Lib::stricmp(pCheck->szPath, szFileName))
@@ -172,11 +172,12 @@ namespace FSMPQ
 			}
 
 			// Derive a search-path name from the filename (uppercase, no extension)
-			char szName[MAX_D2PATH]{ 0 };
+			char szName[MAX_D2PATH]{0};
 			D2Lib::strncpyz(szName, szFileName, MAX_D2PATH);
-			char* pDot = strrchr(szName, '.');
-			if (pDot) *pDot = '\0';
-			for (char* p = szName; *p; p++)
+			char *pDot = strrchr(szName, '.');
+			if (pDot)
+				*pDot = '\0';
+			for (char *p = szName; *p; p++)
 			{
 				if (*p >= 'a' && *p <= 'z')
 					*p -= 32;
@@ -196,9 +197,9 @@ namespace FSMPQ
 	 *	We need to route all of the existing MPQ_Read calls through an ReadFile function to make it work.
 	 *	@author	eezstreet
 	 */
-	fs_handle FindFile(const char* szFileName, const char* szMPQName, D2MPQArchive** pArchiveOut)
+	fs_handle FindFile(const char *szFileName, const char *szMPQName, D2MPQArchive **pArchiveOut)
 	{
-		MPQSearchPath* pCurrent = gpMPQSearchPaths;
+		MPQSearchPath *pCurrent = gpMPQSearchPaths;
 		fs_handle f;
 
 		while (pCurrent != nullptr)
@@ -217,6 +218,6 @@ namespace FSMPQ
 			}
 			pCurrent = pCurrent->pNext;
 		}
-		return INVALID_HANDLE;	// invalid handle
+		return INVALID_HANDLE; // invalid handle
 	}
 }

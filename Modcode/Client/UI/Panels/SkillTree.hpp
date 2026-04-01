@@ -1,16 +1,23 @@
 #pragma once
 #include "../D2Panel.hpp"
 
-/*
- *	Skill tree panel - displays skill trees and allows skill point allocation.
- *	Based on Ghidra analysis: UI/spellsel.cpp / UI/SkillDesc.cpp in the original.
- */
+#define SKILLTREE_MAX_LINES 32
+
 class SkillTree : public D2Panel
 {
+private:
+	IRenderObject *m_titleText;
+	IRenderObject *m_lines[SKILLTREE_MAX_LINES];
+	int m_nLineCount;
+	bool m_bDirty;
+
+	void RefreshSkills();
+
 public:
 	SkillTree();
 	~SkillTree();
 
+	void Show();
 	void Draw() override;
 	void Tick(DWORD dwDeltaMs) override;
 };

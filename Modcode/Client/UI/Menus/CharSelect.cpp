@@ -1,8 +1,14 @@
 #include "CharSelect.hpp"
 #include "Loading.hpp"
 
-static char* gszTokenNames[D2CLASS_MAX] = {
-	"AM", "SO", "NE", "PA", "BA", "DZ", "AI",
+static char *gszTokenNames[D2CLASS_MAX] = {
+	"AM",
+	"SO",
+	"NE",
+	"PA",
+	"BA",
+	"DZ",
+	"AI",
 };
 
 namespace D2Menus
@@ -10,10 +16,10 @@ namespace D2Menus
 	/*
 	 *	Creates the CharSelect menu.
 	 */
-	CharSelect::CharSelect(char** pszSavePaths, int nNumFiles) : D2Menu()
+	CharSelect::CharSelect(char **pszSavePaths, int nNumFiles) : D2Menu()
 	{
 		bool bPreloadedSave = (pszSavePaths != nullptr);
-		D2SaveHeader header{ 0 };
+		D2SaveHeader header{0};
 		fs_handle f;
 
 		// Create the background.

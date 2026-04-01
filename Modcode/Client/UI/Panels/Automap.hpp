@@ -1,12 +1,13 @@
 #pragma once
 #include "../D2Panel.hpp"
 
-/*
- *	Automap overlay panel - draws the map overlay on top of the game world.
- *	Based on Ghidra analysis: UI/automap.cpp in the original.
- */
+#define AUTOMAP_MAX_LINES 5
+
 class Automap : public D2Panel
 {
+private:
+    IRenderObject *m_lines[AUTOMAP_MAX_LINES];
+
 public:
     Automap();
     ~Automap();

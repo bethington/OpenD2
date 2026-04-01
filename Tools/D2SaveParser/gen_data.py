@@ -90,17 +90,23 @@ num_stats = max_id + 1
 # PD2 expanded SaveBits in the ISC TXT but saves still use vanilla D2 bit widths
 # for these stats (confirmed by brute-force bit analysis and d07riv reference).
 VANILLA_OVERRIDE_STATS = {
-    17, 18,       # enhanced damage % (vanilla=9, PD2 ISC=10)
-    21, 22,       # physical min/max damage (vanilla=6/7, PD2 ISC=10)
-    23, 24,       # secondary min/max damage (vanilla=6/7, PD2 ISC=10)
-    48, 49,       # fire min/max damage (vanilla=8/9, PD2 ISC=10) - confirmed by brute force
-    50,           # lightning min damage (vanilla=6, PD2 ISC=10) - confirmed by brute force
-    52, 53,       # magic min/max damage (vanilla=8/9, PD2 ISC=10)
-    57, 58,       # poison min/max damage (vanilla=10, PD2 ISC=14)
-    74,           # hp regen (vanilla=6, PD2 ISC=10)
-    78,           # attacker takes damage (vanilla=7, PD2 ISC=11)
-    120,          # damage target AC (vanilla=7, PD2 ISC=10)
-    128,          # attacker takes light damage (vanilla=5, PD2 ISC=11)
+    17,
+    18,  # enhanced damage % (vanilla=9, PD2 ISC=10)
+    21,
+    22,  # physical min/max damage (vanilla=6/7, PD2 ISC=10)
+    23,
+    24,  # secondary min/max damage (vanilla=6/7, PD2 ISC=10)
+    48,
+    49,  # fire min/max damage (vanilla=8/9, PD2 ISC=10) - confirmed by brute force
+    50,  # lightning min damage (vanilla=6, PD2 ISC=10) - confirmed by brute force
+    52,
+    53,  # magic min/max damage (vanilla=8/9, PD2 ISC=10)
+    57,
+    58,  # poison min/max damage (vanilla=10, PD2 ISC=14)
+    74,  # hp regen (vanilla=6, PD2 ISC=10)
+    78,  # attacker takes damage (vanilla=7, PD2 ISC=11)
+    120,  # damage target AC (vanilla=7, PD2 ISC=10)
+    128,  # attacker takes light damage (vanilla=5, PD2 ISC=11)
 }
 savebits = []
 for i in range(num_stats):
@@ -119,7 +125,9 @@ overrides = []
 for i in VANILLA_OVERRIDE_STATS:
     if i < len(vanilla_savebits):
         pd2_val = stat_data.get(i, (0, 0, 0))[0]
-        overrides.append(f"  stat {i}: PD2 ISC={pd2_val} -> vanilla={vanilla_savebits[i]}")
+        overrides.append(
+            f"  stat {i}: PD2 ISC={pd2_val} -> vanilla={vanilla_savebits[i]}"
+        )
 if overrides:
     print(f"Applied {len(overrides)} vanilla SaveBits overrides:")
     for o in sorted(overrides):

@@ -24,19 +24,19 @@
  *	Whenever we reference a file directly (ie, "d2char.mpq"), it's always assumed to be a path relative to a directory.
  */
 
-#define MAX_CONCURRENT_FILES_OPEN	32
+#define MAX_CONCURRENT_FILES_OPEN 32
 
 namespace FS
 {
-	static char gszHomePath[MAX_D2PATH_ABSOLUTE]{ 0 };
-	static char gszBasePath[MAX_D2PATH_ABSOLUTE]{ 0 };
-	static char gszModPath[MAX_D2PATH_ABSOLUTE]{ 0 };
+	static char gszHomePath[MAX_D2PATH_ABSOLUTE]{0};
+	static char gszBasePath[MAX_D2PATH_ABSOLUTE]{0};
+	static char gszModPath[MAX_D2PATH_ABSOLUTE]{0};
 	static bool bDirect = false; // True if the -direct switch is on.
-	                             // If the -direct switch is on, then we load from the local file system
-	                             // before attempting to read from an MPQ.
-	                             // (We always use the local filesystem in a write.)
+								 // If the -direct switch is on, then we load from the local file system
+								 // before attempting to read from an MPQ.
+								 // (We always use the local filesystem in a write.)
 
-	static const char* pszPaths[FS_MAXPATH] = {
+	static const char *pszPaths[FS_MAXPATH] = {
 		gszHomePath,
 		gszBasePath,
 		gszModPath,
@@ -45,12 +45,12 @@ namespace FS
 	struct FSHandleStore
 	{
 		char szFileName[MAX_D2PATH];
-		FILE* handle;
+		FILE *handle;
 		OpenD2FileModes mode;
-		SDL_mutex* mut;
+		SDL_mutex *mut;
 		bool bActive;
 		bool bLoadedFromMPQ;
-		D2MPQArchive* mpq;
+		D2MPQArchive *mpq;
 		fs_handle mpqFileHandle;
 
 		bool Invalid()
@@ -59,7 +59,7 @@ namespace FS
 		}
 	};
 
-	static FSHandleStore glFileHandles[MAX_CONCURRENT_FILES_OPEN]{ 0 };
+	static FSHandleStore glFileHandles[MAX_CONCURRENT_FILES_OPEN]{0};
 	static int gnNumFilesOpened = 0;
 
 	/*
@@ -78,10 +78,10 @@ namespace FS
 	/*
 	 *	Cleanses a filesystem search path
 	 */
-	static void SanitizeSearchPath(char* path)
+	static void SanitizeSearchPath(char *path)
 	{
 		size_t dwPathLen = 0;
-		char szCWD[MAX_D2PATH_ABSOLUTE]{ 0 };
+		char szCWD[MAX_D2PATH_ABSOLUTE]{0};
 
 		Sys::GetWorkingDirectory(szCWD, MAX_D2PATH_ABSOLUTE);
 
@@ -118,7 +118,7 @@ namespace FS
 		for (int i = 0; i < strlen(path); i++)
 		{
 			if (path[i] == '/' && path[i + 1] == '/')
-			{	// found em
+			{ // found em
 				D2Lib::strncpyz(path + i, path + i + 1, MAX_D2PATH_ABSOLUTE);
 			}
 		}
@@ -142,7 +142,7 @@ namespace FS
 	 *	Initializes the OpenD2 filesystem
 	 *	@author	eezstreet
 	 */
-	void Init(D2GameConfigStrc* pConfig, OpenD2ConfigStrc* pOpenConfig)
+	void Init(D2GameConfigStrc *pConfig, OpenD2ConfigStrc *pOpenConfig)
 	{
 		// Copy paths from the config to the FS
 		if (pOpenConfig->szHomePath[0] == '\0')
@@ -185,7 +185,7 @@ namespace FS
 
 		for (int i = 0; i < MAX_CONCURRENT_FILES_OPEN; i++)
 		{
-			FSHandleStore* pRecord = &glFileHandles[i];
+			FSHandleStore *pRecord = &glFileHandles[i];
 			if (pRecord->bActive)
 			{
 				if (!pRecord->bLoadedFromMPQ)
@@ -201,7 +201,7 @@ namespace FS
 	 *	Cleanses a file's path.
 	 *	Any filename passed into the function is assumed to have MAX_D2PATH characters in its buffer, or otherwise be valid.
 	 */
-	static void SanitizeFilePath(char* path)
+	static void SanitizeFilePath(char *path)
 	{
 		// Remove leading slashes
 		if (*path == '/')
@@ -213,7 +213,7 @@ namespace FS
 		for (int i = 0; i < strlen(path); i++)
 		{
 			if (path[i] == '/' && path[i + 1] == '/')
-			{	// found em
+			{ // found em
 				D2Lib::strncpyz(path + i, path + i + 1, MAX_D2PATH_ABSOLUTE);
 			}
 		}
@@ -222,7 +222,7 @@ namespace FS
 	/*
 	 *	Converts an FS_MODE into something that can be used by fopen, etc
 	 */
-	static const char* ModeStr(OpenD2FileModes mode, bool bBinary)
+	static const char *ModeStr(OpenD2FileModes mode, bool bBinary)
 	{
 		switch (mode)
 		{
@@ -278,16 +278,16 @@ namespace FS
 	 *	Open a file with the select mode.
 	 *	@return	The size of the file
 	 */
-	size_t Open(const char* filename, fs_handle* f, OpenD2FileModes mode, bool bBinary)
+	size_t Open(const char *filename, fs_handle *f, OpenD2FileModes mode, bool bBinary)
 	{
-		char path[MAX_D2PATH_ABSOLUTE]{ 0 };
-		char filepathBuffer[MAX_D2PATH_ABSOLUTE]{ 0 };
-		const char* szModeStr = ModeStr(mode, bBinary);
+		char path[MAX_D2PATH_ABSOLUTE]{0};
+		char filepathBuffer[MAX_D2PATH_ABSOLUTE]{0};
+		const char *szModeStr = ModeStr(mode, bBinary);
 		fs_handle outHandle = 0;
 		size_t dwLen = 0;
-		FILE* fileHandle = nullptr;
+		FILE *fileHandle = nullptr;
 		bool bUsedMPQ = false;
-		D2MPQArchive* mpq = nullptr;
+		D2MPQArchive *mpq = nullptr;
 		fs_handle mpqFileHandle = INVALID_HANDLE;
 
 		// FIXME: warn if the handle is already open?
@@ -305,7 +305,7 @@ namespace FS
 			int add = -1;
 
 			if (mode != FS_READ)
-			{	// flip the terminal and the start
+			{ // flip the terminal and the start
 				int swap = terminal;
 				terminal = start;
 				start = swap;
@@ -325,16 +325,16 @@ namespace FS
 		}
 
 		if (mode == FS_READ && fileHandle == nullptr)
-		{	// try to read it from an MPQ
+		{ // try to read it from an MPQ
 			mpqFileHandle = FSMPQ::FindFile(filename, nullptr, &mpq);
 			if (mpqFileHandle != INVALID_HANDLE)
 			{
-				bUsedMPQ = true; 
+				bUsedMPQ = true;
 			}
 		}
 
 		if (mode == FS_READ && mpqFileHandle == INVALID_HANDLE)
-		{	// try one more time to find it
+		{ // try one more time to find it
 			for (int i = FS_MAXPATH - 1; i != 0; i--)
 			{
 				D2Lib::strncpyz(path, pszPaths[i], MAX_D2PATH_ABSOLUTE);
@@ -348,7 +348,7 @@ namespace FS
 		}
 
 		if (fileHandle == nullptr && mpqFileHandle == INVALID_HANDLE)
-		{	// file could not be found
+		{ // file could not be found
 			*f = INVALID_HANDLE;
 			return 0;
 		}
@@ -393,7 +393,7 @@ namespace FS
 	/*
 	 *	Finds a file record (from the linked list). Returns nullptr if it isn't found.
 	 */
-	static FSHandleStore* GetFileRecord(fs_handle f)
+	static FSHandleStore *GetFileRecord(fs_handle f)
 	{
 		if (f == INVALID_HANDLE)
 		{
@@ -407,20 +407,20 @@ namespace FS
 	 *	Read from the file into a buffer
 	 *	@return	The number of bytes read from the file
 	 */
-	size_t Read(fs_handle f, void* buffer, size_t dwBufferLen, size_t dwCount)
+	size_t Read(fs_handle f, void *buffer, size_t dwBufferLen, size_t dwCount)
 	{
 		size_t result;
-		FSHandleStore* pSource = GetFileRecord(f);
+		FSHandleStore *pSource = GetFileRecord(f);
 
 		if (pSource == nullptr || !pSource->bActive || pSource->Invalid())
-		{	// invalid file of some kind
+		{ // invalid file of some kind
 			return 0;
 		}
 
 		SDL_LockMutex(pSource->mut);
 		if (pSource->bLoadedFromMPQ)
 		{
-			result = MPQ::ReadFile(pSource->mpq, pSource->mpqFileHandle, (BYTE*)buffer, dwBufferLen);
+			result = MPQ::ReadFile(pSource->mpq, pSource->mpqFileHandle, (BYTE *)buffer, dwBufferLen);
 		}
 		else
 		{
@@ -435,14 +435,14 @@ namespace FS
 	 *	Write to a file
 	 *	@return	The number of bytes written to the file
 	 */
-	size_t Write(fs_handle f, void* buffer, size_t dwBufferLen, size_t dwCount)
+	size_t Write(fs_handle f, void *buffer, size_t dwBufferLen, size_t dwCount)
 	{
 		if (f == INVALID_HANDLE)
 		{
 			return 0;
 		}
 
-		FSHandleStore* pRecord = GetFileRecord(f);
+		FSHandleStore *pRecord = GetFileRecord(f);
 		size_t result;
 
 		if (!pRecord || pRecord->mode == FS_READ || pRecord->bLoadedFromMPQ)
@@ -456,7 +456,7 @@ namespace FS
 
 		if (dwBufferLen == 0)
 		{
-			dwBufferLen = strlen((const char*)buffer);
+			dwBufferLen = strlen((const char *)buffer);
 		}
 
 		result = fwrite(buffer, dwCount, dwBufferLen, pRecord->handle);
@@ -470,10 +470,10 @@ namespace FS
 	/*
 	 *	Writes plaintext to a file
 	 */
-	size_t WritePlaintext(fs_handle f, const char* text)
+	size_t WritePlaintext(fs_handle f, const char *text)
 	{
 		size_t dwLen = strlen(text);
-		return Write(f, (void*)text, dwLen);
+		return Write(f, (void *)text, dwLen);
 	}
 
 	/*
@@ -481,7 +481,7 @@ namespace FS
 	 */
 	void CloseFile(fs_handle f)
 	{
-		FSHandleStore* pRecord = GetFileRecord(f);
+		FSHandleStore *pRecord = GetFileRecord(f);
 
 		if (pRecord == nullptr || pRecord->Invalid())
 		{
@@ -507,8 +507,8 @@ namespace FS
 	 */
 	void Seek(fs_handle f, size_t offset, int nSeekType)
 	{
-		// 
-		FSHandleStore* pRecord = GetFileRecord(f);
+		//
+		FSHandleStore *pRecord = GetFileRecord(f);
 
 		if (pRecord == nullptr || pRecord->Invalid())
 		{
@@ -530,7 +530,7 @@ namespace FS
 	size_t Tell(fs_handle f)
 	{
 		size_t result;
-		FSHandleStore* pFile = GetFileRecord(f);
+		FSHandleStore *pFile = GetFileRecord(f);
 
 		if (pFile == nullptr || pFile->Invalid())
 		{
@@ -549,9 +549,9 @@ namespace FS
 	/*
 	 *	Finds the (absolute) path of a file, anywhere in our search paths.
 	 */
-	bool Find(char* szFileName, char* szBuffer, size_t dwBufferLen)
+	bool Find(char *szFileName, char *szBuffer, size_t dwBufferLen)
 	{
-		FILE* f;
+		FILE *f;
 
 		if (dwBufferLen < MAX_D2PATH_ABSOLUTE)
 		{
@@ -561,18 +561,18 @@ namespace FS
 		SanitizeFilePath(szFileName);
 
 		size_t dwFileNameLen = strlen(szFileName);
-		for (int i = FS_MAXPATH - 1; i >= 0; i--)	// go in reverse since we're reading
+		for (int i = FS_MAXPATH - 1; i >= 0; i--) // go in reverse since we're reading
 		{
 			D2Lib::strncpyz(szBuffer, pszPaths[i], dwBufferLen);
 			strncat(szBuffer, szFileName, dwFileNameLen);
 			f = fopen(szBuffer, "r");
 			if (f != nullptr)
-			{	// at this point, szBuffer will point to the correct file path
+			{ // at this point, szBuffer will point to the correct file path
 				fclose(f);
 				return true;
 			}
 		}
-		return false;	// didn't find it
+		return false; // didn't find it
 	}
 
 	/*
@@ -581,12 +581,12 @@ namespace FS
 	 *	The extension filter may use an asterisk (*) as a wild card (this is handled by the OS-specific code)
 	 *	@author	eezstreet
 	 */
-	char** ListFilesInDirectory(char* szDirectory, char* szExtensionFilter, int *nFiles)
+	char **ListFilesInDirectory(char *szDirectory, char *szExtensionFilter, int *nFiles)
 	{
-		char szFiles[MAX_FILE_LIST_SIZE][MAX_D2PATH_ABSOLUTE]{ 0 };
-		char** szOutFiles;
+		char szFiles[MAX_FILE_LIST_SIZE][MAX_D2PATH_ABSOLUTE]{0};
+		char **szOutFiles;
 		int i;
-		char szCurrentSearchPath[MAX_D2PATH_ABSOLUTE]{ 0 };
+		char szCurrentSearchPath[MAX_D2PATH_ABSOLUTE]{0};
 
 		SanitizeFilePath(szDirectory);
 
@@ -603,10 +603,10 @@ namespace FS
 		}
 
 		// copy the temporary files into the output files
-		szOutFiles = (char**)malloc(sizeof(char*) * (*nFiles));
+		szOutFiles = (char **)malloc(sizeof(char *) * (*nFiles));
 		for (i = 0; i < *nFiles; i++)
 		{
-			szOutFiles[i] = (char*)malloc(sizeof(char*) * MAX_D2PATH_ABSOLUTE);
+			szOutFiles[i] = (char *)malloc(sizeof(char *) * MAX_D2PATH_ABSOLUTE);
 			D2Lib::strncpyz(szOutFiles[i], szFiles[i], MAX_D2PATH_ABSOLUTE);
 		}
 
@@ -617,7 +617,7 @@ namespace FS
 	 *	Frees a file list. Don't forget to do this once you're done with a file list!
 	 *	@author	eezstreet
 	 */
-	void FreeFileList(char** pszFileList, int nNumFiles)
+	void FreeFileList(char **pszFileList, int nNumFiles)
 	{
 		for (int i = 0; i < nNumFiles; i++)
 		{
@@ -630,9 +630,9 @@ namespace FS
 	 *	Creates a subdirectory at the first available searchpath
 	 *	@author	eezstreet
 	 */
-	void CreateSubdirectory(char* szSubdirectory)
+	void CreateSubdirectory(char *szSubdirectory)
 	{
-		char szPath[MAX_D2PATH_ABSOLUTE]{ 0 };
+		char szPath[MAX_D2PATH_ABSOLUTE]{0};
 
 		for (int i = 0; i < FS_MAXPATH; i++)
 		{
@@ -648,7 +648,7 @@ namespace FS
 	/*
 	 *	Returns the base path (where vanilla game files live)
 	 */
-	const char* GetBasePath()
+	const char *GetBasePath()
 	{
 		return gszBasePath;
 	}
@@ -656,7 +656,7 @@ namespace FS
 	/*
 	 *	Returns the mod path (where mod files override base files)
 	 */
-	const char* GetModPath()
+	const char *GetModPath()
 	{
 		return gszModPath;
 	}

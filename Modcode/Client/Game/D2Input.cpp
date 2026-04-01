@@ -44,10 +44,10 @@ void D2InputBindings::LoadDefaults()
 
     // UI toggles
     SetBind(BIND_TOGGLE_AUTOMAP, 1073741892, 0); // F11 (not standard, but Tab is complex)
-    SetBind(BIND_TOGGLE_INVENTORY, 'i', 0);
+    SetBind(BIND_TOGGLE_INVENTORY, 'x', 0);
     SetBind(BIND_TOGGLE_CHARACTER, 'c', 0);
     SetBind(BIND_TOGGLE_SKILLTREE, 't', 0);
-    SetBind(BIND_TOGGLE_QUESTLOG, 'q', 0);
+    SetBind(BIND_TOGGLE_QUESTLOG, 'v', 0);
     SetBind(BIND_TOGGLE_PARTY, 'p', 0);
     SetBind(BIND_TOGGLE_BELT, '~', 0);
     SetBind(BIND_TOGGLE_CHAT, 13, 0); // Enter

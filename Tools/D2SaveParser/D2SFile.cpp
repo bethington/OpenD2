@@ -489,7 +489,7 @@ bool D2SFile::ParseSingleItem(size_t &offset, D2SItem &item)
 		return false;
 
 	size_t itemJmOffset = offset; // remember where this item's JM was
-	offset += 2; // skip "JM"
+	offset += 2;				  // skip "JM"
 
 	// Items are bit-packed from here
 	D2SBitReader reader(m_data.data() + offset, m_data.size() - offset);

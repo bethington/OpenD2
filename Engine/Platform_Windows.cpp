@@ -307,7 +307,7 @@ namespace Sys
 	D2ModuleExportStrc *OpenModule(OpenD2Modules nModule, D2ModuleImportStrc *pImports)
 	{
 		char szModulePath[MAX_D2PATH_ABSOLUTE]{0};
-		const char* szDllName = nullptr;
+		const char *szDllName = nullptr;
 
 		if (gModules[nModule].dwModule != 0)
 		{
@@ -331,7 +331,7 @@ namespace Sys
 		if (gModules[nModule].dwModule == 0)
 		{
 			// Fall back to FS search paths
-			if (FS::Find((char*)szDllName, szModulePath, MAX_D2PATH_ABSOLUTE))
+			if (FS::Find((char *)szDllName, szModulePath, MAX_D2PATH_ABSOLUTE))
 			{
 				gModules[nModule].dwModule = LoadLibrary(szModulePath);
 			}
