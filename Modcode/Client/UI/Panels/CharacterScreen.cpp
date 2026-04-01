@@ -1,5 +1,11 @@
 #include "CharacterScreen.hpp"
+#include "../../D2Client.hpp"
 #include <string.h>
+
+// Class token names for player character rendering
+static const char *g_szClassTokens[D2CLASS_MAX] = {
+    "AM", "SO", "NE", "PA", "BA", "DZ", "AI"
+};
 
 // D2 stat IDs
 enum
@@ -32,7 +38,8 @@ static const char *g_szBodySlotNames[] = {
     "RRing", "LRing", "Belt", "Boots", "Gloves", "RSwap", "LSwap"};
 
 CharacterScreen::CharacterScreen()
-    : m_background(nullptr), m_bgReference(nullptr), m_bDirty(true)
+    : m_background(nullptr), m_bgReference(nullptr),
+      m_token(nullptr), m_charRender(nullptr), m_nLastClass(-1), m_bDirty(true)
 {
     m_bVisible = false;
     x = 0;
@@ -89,10 +96,63 @@ CharacterScreen::~CharacterScreen()
     {
         engine->renderer->Remove(m_lines[i]);
     }
+    if (m_charRender)
+    {
+        engine->renderer->Remove(m_charRender);
+    }
+    if (m_token)
+    {
+        engine->graphics->DeleteReference(m_token);
+    }
     if (m_background)
     {
         engine->renderer->Remove(m_background);
     }
+}
+
+void CharacterScreen::RefreshCharToken()
+{
+    D2SaveHeader &hdr = cl.currentSave.header;
+    int charClass = hdr.nCharClass;
+    if (charClass < 0 || charClass >= D2CLASS_MAX)
+        charClass = 0;
+
+    // Only recreate token if the class changed
+    if (charClass == m_nLastClass && m_charRender != nullptr)
+        return;
+
+    // Clean up previous token
+    if (m_charRender)
+    {
+        engine->renderer->Remove(m_charRender);
+        m_charRender = nullptr;
+    }
+    if (m_token)
+    {
+        engine->graphics->DeleteReference(m_token);
+        m_token = nullptr;
+    }
+
+    m_nLastClass = charClass;
+
+    // Create new token
+    m_token = engine->graphics->CreateReference(TOKEN_CHAR, g_szClassTokens[charClass]);
+    if (!m_token)
+        return;
+
+    m_charRender = engine->renderer->AllocateObject(1);
+    m_charRender->AttachTokenResource(m_token);
+    m_charRender->SetTokenHitClass(WC_HTH);
+    m_charRender->SetTokenMode(PLRMODE_NU);
+
+    // Set appearance from save header
+    for (int i = 0; i < COMP_MAX; i++)
+    {
+        m_charRender->SetTokenArmorLevel(i, "lit");
+    }
+
+    // Position character on the left side of the panel
+    m_charRender->SetDrawCoords(160, 350, 0, 0);
 }
 
 DWORD CharacterScreen::GetStatValue(WORD statId)
@@ -111,6 +171,9 @@ void CharacterScreen::RefreshStats()
     m_bDirty = false;
     D2SaveHeader &hdr = cl.currentSave.header;
     char16_t buf[128];
+
+    // Refresh the character token preview
+    RefreshCharToken();
 
     // Line 0: Character name
     char16_t name[32];
@@ -187,6 +250,9 @@ void CharacterScreen::Draw()
 
     if (m_background)
         m_background->Draw();
+
+    if (m_charRender)
+        m_charRender->Draw();
 
     for (int i = 0; i < CHARSCREEN_NUM_LINES; i++)
         m_lines[i]->Draw();
