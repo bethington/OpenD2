@@ -87,6 +87,10 @@ extern D2Client cl;
 
 bool Client_classMale(int nCharClass);
 char16_t *Client_className(int nCharClass);
+char16_t *Client_getItemName(const char *szCode);
+char16_t *Client_getSkillName(int nCharClass, int nSkillIndex);
+char16_t *Client_getUniqueItemName(const char *szCode, BYTE nQuality);
+const char *Client_getItemInvFile(const char *szCode, BYTE nQuality);
 
 /////////////////////////////////////////////////
 //

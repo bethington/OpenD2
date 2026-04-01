@@ -1,5 +1,7 @@
 #include "Inventory.hpp"
+#include "../../D2Client.hpp"
 #include <string.h>
+#include <stdio.h>
 
 // Body location names matching D2's body location codes (0-12)
 static const char16_t *g_szBodySlots[] = {
@@ -13,10 +15,17 @@ static const char16_t *g_szQualityNames[] = {
 #define NUM_QUALITY_NAMES 9
 
 Inventory::Inventory()
-    : m_background(nullptr), m_bgReference(nullptr), m_bDirty(true)
+    : m_background(nullptr), m_bgReference(nullptr), m_nSpriteCount(0), m_bDirty(true)
 {
     m_bVisible = false;
     x = 400; // Right side of screen
+
+    // Init sprite arrays
+    for (int i = 0; i < INV_MAX_SPRITES; i++)
+    {
+        m_itemSpriteRefs[i] = nullptr;
+        m_itemSprites[i] = nullptr;
+    }
 
     // Title
     m_titleText = engine->renderer->AllocateObject(1);
@@ -60,6 +69,7 @@ Inventory::Inventory()
 
 Inventory::~Inventory()
 {
+    ClearSprites();
     engine->renderer->Remove(m_titleText);
     for (int i = 0; i < INV_MAX_EQUIP_LINES; i++)
         engine->renderer->Remove(m_equipLines[i]);
@@ -70,11 +80,32 @@ Inventory::~Inventory()
         engine->renderer->Remove(m_background);
 }
 
+void Inventory::ClearSprites()
+{
+    for (int i = 0; i < m_nSpriteCount; i++)
+    {
+        if (m_itemSprites[i])
+        {
+            engine->renderer->Remove(m_itemSprites[i]);
+            m_itemSprites[i] = nullptr;
+        }
+        if (m_itemSpriteRefs[i])
+        {
+            engine->graphics->DeleteReference(m_itemSpriteRefs[i]);
+            m_itemSpriteRefs[i] = nullptr;
+        }
+    }
+    m_nSpriteCount = 0;
+}
+
 void Inventory::RefreshItems()
 {
     m_bDirty = false;
     D2SaveExtendedData &ext = cl.currentSave.extended;
     char16_t buf[128];
+
+    // Clear previous sprites
+    ClearSprites();
 
     // Clear all lines
     for (int i = 0; i < INV_MAX_EQUIP_LINES; i++)
@@ -94,16 +125,30 @@ void Inventory::RefreshItems()
         if (item.nParent != 1)
             continue;
 
-        // Convert item code to char16_t
-        char16_t code[8];
-        for (int c = 0; c < 4; c++)
-            code[c] = (char16_t)item.szCode[c];
-        code[4] = 0;
-
         const char16_t *slotName = (item.nBodyLoc < NUM_BODY_SLOTS) ? g_szBodySlots[item.nBodyLoc] : u"?";
-        const char16_t *qualName = (item.nQuality < NUM_QUALITY_NAMES) ? g_szQualityNames[item.nQuality] : u"";
 
-        D2Lib::qsnprintf(buf, 128, u"%s: [%s] %s", slotName, code, qualName);
+        // Try to get the real item name from BIN/TBL data
+        char16_t *itemName = nullptr;
+        if (item.nQuality == 7 || item.nQuality == 5)
+            itemName = Client_getUniqueItemName(item.szCode, item.nQuality);
+        else
+            itemName = Client_getItemName(item.szCode);
+
+        if (itemName)
+        {
+            const char16_t *qualName = (item.nQuality < NUM_QUALITY_NAMES) ? g_szQualityNames[item.nQuality] : u"";
+            D2Lib::qsnprintf(buf, 128, u"%s: %s %s", slotName, qualName, itemName);
+        }
+        else
+        {
+            // Fallback: show raw code
+            char16_t code[8];
+            for (int c = 0; c < 4; c++)
+                code[c] = (char16_t)item.szCode[c];
+            code[4] = 0;
+            const char16_t *qualName = (item.nQuality < NUM_QUALITY_NAMES) ? g_szQualityNames[item.nQuality] : u"";
+            D2Lib::qsnprintf(buf, 128, u"%s: [%s] %s", slotName, code, qualName);
+        }
         m_equipLines[equipLine]->SetText(buf);
 
         // Color by quality
@@ -127,6 +172,29 @@ void Inventory::RefreshItems()
             break; // Crafted
         }
         m_equipLines[equipLine]->SetTextColor(color);
+
+        // Load item sprite if possible
+        if (m_nSpriteCount < INV_MAX_SPRITES)
+        {
+            const char *invFile = Client_getItemInvFile(item.szCode, item.nQuality);
+            if (invFile && invFile[0] != '\0')
+            {
+                char spritePath[128];
+                snprintf(spritePath, 128, "data\\global\\items\\%s.dc6", invFile);
+                IGraphicsReference *ref = engine->graphics->CreateReference(
+                    spritePath, UsagePolicy_Permanent);
+                if (ref)
+                {
+                    IRenderObject *sprite = engine->renderer->AllocateObject(0);
+                    sprite->AttachCompositeTextureResource(ref, 0, 1);
+                    sprite->SetDrawCoords(710 - 30, 42 + equipLine * 16 - 2, 28, 28);
+                    m_itemSpriteRefs[m_nSpriteCount] = ref;
+                    m_itemSprites[m_nSpriteCount] = sprite;
+                    m_nSpriteCount++;
+                }
+            }
+        }
+
         equipLine++;
     }
 
@@ -142,14 +210,27 @@ void Inventory::RefreshItems()
         if (item.nParent != 0 || item.nStorage != 1)
             continue;
 
-        char16_t code[8];
-        for (int c = 0; c < 4; c++)
-            code[c] = (char16_t)item.szCode[c];
-        code[4] = 0;
+        // Try to get the real item name from BIN/TBL data
+        char16_t *itemName = nullptr;
+        if (item.nQuality == 7 || item.nQuality == 5)
+            itemName = Client_getUniqueItemName(item.szCode, item.nQuality);
+        else
+            itemName = Client_getItemName(item.szCode);
 
-        const char16_t *qualName = (item.nQuality < NUM_QUALITY_NAMES) ? g_szQualityNames[item.nQuality] : u"";
-
-        D2Lib::qsnprintf(buf, 128, u"[%s] %s", code, qualName);
+        if (itemName)
+        {
+            const char16_t *qualName = (item.nQuality < NUM_QUALITY_NAMES) ? g_szQualityNames[item.nQuality] : u"";
+            D2Lib::qsnprintf(buf, 128, u"%s %s", qualName, itemName);
+        }
+        else
+        {
+            char16_t code[8];
+            for (int c = 0; c < 4; c++)
+                code[c] = (char16_t)item.szCode[c];
+            code[4] = 0;
+            const char16_t *qualName = (item.nQuality < NUM_QUALITY_NAMES) ? g_szQualityNames[item.nQuality] : u"";
+            D2Lib::qsnprintf(buf, 128, u"[%s] %s", code, qualName);
+        }
         if (item.nTotalSockets > 0)
         {
             char16_t buf2[128];
@@ -219,6 +300,11 @@ void Inventory::Draw()
         m_equipLines[i]->Draw();
     for (int i = 0; i < INV_MAX_GRID_LINES; i++)
         m_gridLines[i]->Draw();
+    for (int i = 0; i < m_nSpriteCount; i++)
+    {
+        if (m_itemSprites[i])
+            m_itemSprites[i]->Draw();
+    }
     m_goldText->Draw();
 
     DrawWidgets();

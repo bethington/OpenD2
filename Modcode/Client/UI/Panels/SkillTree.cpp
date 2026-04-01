@@ -1,4 +1,5 @@
 #include "SkillTree.hpp"
+#include "../../D2Client.hpp"
 
 // Skill names per class, 30 skills each, 3 tabs of 10
 // Tab names followed by skill names (from D2's Skills.txt ordering)
@@ -74,15 +75,25 @@ void SkillTree::RefreshSkills()
         {
             int skillIdx = tab * 10 + s;
             BYTE pts = (skillIdx < MAX_D2SAVE_SKILLS) ? ext.skills[skillIdx] : 0;
+
+            // Try to get the real skill name from BIN/TBL data
+            char16_t *skillName = Client_getSkillName(charClass, skillIdx);
+
             if (pts > 0)
             {
-                D2Lib::qsnprintf(buf, 128, u"  Skill %d: %d pts", skillIdx + 1, (int)pts);
+                if (skillName)
+                    D2Lib::qsnprintf(buf, 128, u"  %s: %d pts", skillName, (int)pts);
+                else
+                    D2Lib::qsnprintf(buf, 128, u"  Skill %d: %d pts", skillIdx + 1, (int)pts);
                 m_lines[line]->SetText(buf);
                 m_lines[line]->SetTextColor(TextColor_White);
             }
             else
             {
-                D2Lib::qsnprintf(buf, 128, u"  Skill %d: -", skillIdx + 1);
+                if (skillName)
+                    D2Lib::qsnprintf(buf, 128, u"  %s: -", skillName);
+                else
+                    D2Lib::qsnprintf(buf, 128, u"  Skill %d: -", skillIdx + 1);
                 m_lines[line]->SetText(buf);
                 m_lines[line]->SetTextColor(TextColor_Grey);
             }

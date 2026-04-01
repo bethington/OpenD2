@@ -108,6 +108,60 @@ void DataTables_Init()
 		DataTables_Load("lvlmaze", (void **)&sgptDataTables->pLvlMazeTxt, nullptr, sizeof(D2LvlMazeTxt));
 	sgptDataTables->nLvlPrestTxtRecordCount =
 		DataTables_Load("lvlprest", (void **)&sgptDataTables->pLvlPrestTxt, nullptr, sizeof(D2LvlPrestTxt));
+
+	//////////////
+	//
+	//	Items
+
+	sgptDataTables->nItemsTxtRecordCount =
+		DataTables_Load("weapons", (void **)&sgptDataTables->pWeapons, nullptr, sizeof(D2ItemsTxt));
+	sgptDataTables->nArmorTxtRecordCount =
+		DataTables_Load("armor", (void **)&sgptDataTables->pArmor, nullptr, sizeof(D2ItemsTxt));
+	sgptDataTables->nMiscTxtRecordCount =
+		DataTables_Load("misc", (void **)&sgptDataTables->pMisc, nullptr, sizeof(D2ItemsTxt));
+
+	sgptDataTables->nItemStatCostTxtRecordCount =
+		DataTables_Load("itemstatcost", (void **)&sgptDataTables->pItemStatCostTxt, nullptr, sizeof(D2ItemStatCostTxt));
+
+	sgptDataTables->nItemTypesTxtRecordCount =
+		DataTables_Load("itemtypes", (void **)&sgptDataTables->pItemTypesTxt, nullptr, sizeof(D2ItemTypesTxt));
+
+	//////////////
+	//
+	//	Unique and Set Items
+
+	sgptDataTables->nUniqueItemsTxtRecordCount =
+		DataTables_Load("uniqueitems", (void **)&sgptDataTables->pUniqueItemsTxt, nullptr, sizeof(D2UniqueItemsTxt));
+
+	sgptDataTables->nSetItemsTxtRecordCount =
+		DataTables_Load("setitems", (void **)&sgptDataTables->pSetItemsTxt, nullptr, sizeof(D2SetItemsTxt));
+
+	sgptDataTables->nSetsTxtRecordCount =
+		DataTables_Load("sets", (void **)&sgptDataTables->pSetsTxt, nullptr, sizeof(D2SetsTxt));
+
+	//////////////
+	//
+	//	Skills
+
+	sgptDataTables->nSkillsTxtRecordCount =
+		DataTables_Load("skills", (void **)&sgptDataTables->pSkillsTxt, nullptr, sizeof(D2SkillsTxt));
+
+	sgptDataTables->nSkillDescTxtRecordCount =
+		DataTables_Load("skilldesc", (void **)&sgptDataTables->pSkillDescTxt, nullptr, sizeof(D2SkillDescTxt));
+
+	//////////////
+	//
+	//	Character Stats
+
+	sgptDataTables->nCharStatsTxtRecordCount =
+		DataTables_Load("charstats", (void **)&sgptDataTables->pCharStatsTxt, nullptr, sizeof(D2CharStatsTxt));
+
+	//////////////
+	//
+	//	Properties
+
+	sgptDataTables->nPropertiesTxtRecordCount =
+		DataTables_Load("properties", (void **)&sgptDataTables->pPropertiesTxt, nullptr, sizeof(D2PropertiesTxt));
 }
 
 /*
@@ -123,4 +177,16 @@ void DataTables_Free()
 	free(sgptDataTables->pLvlWarpTxt);
 	free(sgptDataTables->pLvlMazeTxt);
 	free(sgptDataTables->pLvlPrestTxt);
+	free(sgptDataTables->pWeapons);
+	free(sgptDataTables->pArmor);
+	free(sgptDataTables->pMisc);
+	free(sgptDataTables->pItemStatCostTxt);
+	free(sgptDataTables->pItemTypesTxt);
+	free(sgptDataTables->pUniqueItemsTxt);
+	free(sgptDataTables->pSetItemsTxt);
+	free(sgptDataTables->pSetsTxt);
+	free(sgptDataTables->pSkillsTxt);
+	free(sgptDataTables->pSkillDescTxt);
+	free(sgptDataTables->pCharStatsTxt);
+	free(sgptDataTables->pPropertiesTxt);
 }
