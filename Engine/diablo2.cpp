@@ -93,6 +93,7 @@ D2CmdArgStrc OpenD2CommandArguments[] = {
 	{"FILEIO", "LOGFLAGS", "logflags", CMD_DWORD, co(dwLogFlags), PRIORITY_ALL},
 	{"AUDIO", "AUDIODEVICE", "audiodevice", CMD_DWORD, co(dwAudioDevice), 0},
 	{"AUDIO", "AUDIOCHANNELS", "audiochannels", CMD_DWORD, co(dwAudioChannels), 2},
+	{"DEBUG", "MAPVIEWER", "mapviewer", CMD_BOOLEAN, co(bMapViewer), 0x00},
 	{"", "", "", 0, 0x0000, 0x00},
 };
 #undef co

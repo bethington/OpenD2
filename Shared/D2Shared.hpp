@@ -658,6 +658,9 @@ struct OpenD2ConfigStrc
 	DWORD dwAudioDevice;
 	DWORD dwAudioChannels;
 	OpenD2GameModes currentGameMode;
+
+	// Map viewer mode: launch directly into DS1 file browser
+	BYTE bMapViewer;
 };
 
 /**

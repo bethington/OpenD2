@@ -1,4 +1,5 @@
 #include "D2Client.hpp"
+#include "MapSelector.hpp"
 #include "UI/Menus/Trademark.hpp"
 #include "UI/Menus/Main.hpp"
 #include "UI/Menus/TCPIP.hpp"
@@ -38,12 +39,30 @@ static void D2Client_InitializeClient(D2GameConfigStrc *pConfig, OpenD2ConfigStr
 		"data\\local\\font\\latin\\fontridiculous.dc6",
 		"fontridiculous");
 
+	// Initialize input bindings
+	gpInputBindings = new D2InputBindings();
+
+	// Check if mapviewer mode is requested
+	if (pOpenConfig->bMapViewer)
+	{
+		engine->Print(PRIORITY_MESSAGE, "Map Viewer mode activated");
+		pOpenConfig->currentGameMode = OpenD2GameModes::MapPreviewer;
+
+		// Create and initialize the map selector
+		gpMapSelector = new MapSelector();
+		gpMapSelector->ScanDirectory(pOpenConfig->szBasePath);
+
+		// Skip trademark menu, go straight to loading
+		cl.gamestate = GS_LOADING;
+		cl.nLoadState = 0;
+		cl.pActiveMenu = nullptr;
+		cl.pLoadingMenu = nullptr;
+		return;
+	}
+
 	// Set first menu to be trademark menu
 	cl.gamestate = GS_TRADEMARK;
 	cl.pActiveMenu = new D2Menus::Trademark();
-
-	// Initialize input bindings
-	gpInputBindings = new D2InputBindings();
 }
 
 /*
@@ -116,6 +135,36 @@ static void D2Client_HandleInput()
 	for (DWORD i = 0; i < openConfig->dwNumPendingCommands; i++)
 	{
 		D2CommandQueue *pCmd = &openConfig->pCmds[i];
+
+		// MapSelector intercepts input when active
+		if (gpMapSelector != nullptr && gpMapSelector->IsActive())
+		{
+			if (pCmd->cmdType == IN_KEYDOWN || pCmd->cmdType == IN_KEYUP)
+			{
+				if (gpMapSelector->HandleKeyDown(pCmd->cmdData.button.buttonID))
+					continue;
+			}
+			else if (pCmd->cmdType == IN_MOUSEDOWN)
+			{
+				cl.dwMouseX = pCmd->cmdData.motion.x;
+				cl.dwMouseY = pCmd->cmdData.motion.y;
+				if (gpMapSelector->HandleMouseDown(cl.dwMouseX, cl.dwMouseY))
+					continue;
+			}
+			else if (pCmd->cmdType == IN_MOUSEMOVE)
+			{
+				cl.dwMouseX = pCmd->cmdData.motion.x;
+				cl.dwMouseY = pCmd->cmdData.motion.y;
+				continue;
+			}
+			else if (pCmd->cmdType == IN_QUIT)
+			{
+				cl.bKillGame = true;
+				return;
+			}
+			continue;
+		}
+
 		// Handle all of the different event types
 		switch (pCmd->cmdType)
 		{
@@ -354,6 +403,20 @@ static void D2Client_LoadData()
 			gpGame->Initialize(0, nSaveAct, (WORD)nTownLevel,
 							   cl.currentSave.header.dwSeed,
 							   bExpansion, nSaveDifficulty);
+
+			// In single-player (local server), create the local player directly
+			// since the server stub doesn't send D2SPACKET_ASSIGNPLAYER
+			if (cl.bLocalServer)
+			{
+				D2UnitStrc *pPlayer = gpGame->AddPlayer(
+					1, cl.currentSave.header.nCharClass,
+					cl.currentSave.header.szCharacterName,
+					30, 30); // Town center position
+
+				gpGame->Initialize(1, nSaveAct, (WORD)nTownLevel,
+								   cl.currentSave.header.dwSeed,
+								   bExpansion, nSaveDifficulty);
+			}
 		}
 
 		// Switch to the in-game menu
@@ -420,6 +483,35 @@ static void D2Client_RunClientFrame()
 	{
 		cl.pLoadingMenu->Draw();
 	}
+	// MapSelector UI takes over rendering when active
+	if (gpMapSelector != nullptr && gpMapSelector->IsActive())
+	{
+		gpMapSelector->Draw();
+		// Don't call Present() here - MapSelector::Draw() calls it
+		goto frame_end;
+	}
+	else if (gpMapSelector != nullptr && gpMapSelector->HasSelection())
+	{
+		// User made a selection - transition to map preview
+		engine->Print(PRIORITY_MESSAGE, "Selected map: %s", gpMapSelector->GetSelectedPath());
+
+		// Activate MapPreviewer mode with the selected DS1
+		openConfig->currentGameMode = OpenD2GameModes::MapPreviewer;
+		cl.gamestate = GS_LOADING;
+		cl.nLoadState = 3; // Skip to level creation step
+
+		delete gpMapSelector;
+		gpMapSelector = nullptr;
+	}
+	else if (gpMapSelector != nullptr && !gpMapSelector->IsActive() && !gpMapSelector->HasSelection())
+	{
+		// User pressed Escape - exit
+		delete gpMapSelector;
+		gpMapSelector = nullptr;
+		cl.bKillGame = true;
+		goto frame_end;
+	}
+
 #ifdef _DEBUG
 	if (openConfig->currentGameMode == OpenD2GameModes::MapPreviewer)
 	{
@@ -428,6 +520,8 @@ static void D2Client_RunClientFrame()
 #endif
 
 	engine->renderer->Present();
+
+frame_end:
 
 	// Load stuff, if we need to
 	if (cl.gamestate == GS_LOADING)
@@ -476,6 +570,13 @@ static OpenD2Modules D2Client_RunModuleFrame(D2GameConfigStrc *pConfig, OpenD2Co
  */
 static void D2Client_Shutdown()
 {
+	// Clean up map selector
+	if (gpMapSelector != nullptr)
+	{
+		delete gpMapSelector;
+		gpMapSelector = nullptr;
+	}
+
 	if (cl.pActiveMenu != nullptr)
 	{
 		delete cl.pActiveMenu;

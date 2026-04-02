@@ -29,3 +29,10 @@ set_target_properties(D2Client PROPERTIES LINKER_LANGUAGE CXX)
 
 target_link_libraries(D2Client ${STATIC_LIBRARIES} D2Common)
 target_compile_definitions(D2Client PRIVATE D2CLIENT)
+
+if(USE_ALLEGRO5)
+    target_compile_definitions(D2Client PRIVATE USE_ALLEGRO5)
+endif()
+if(ENABLE_EDITOR)
+    target_compile_definitions(D2Client PRIVATE ENABLE_EDITOR)
+endif()
