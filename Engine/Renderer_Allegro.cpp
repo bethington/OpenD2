@@ -904,7 +904,14 @@ Renderer_Allegro::~Renderer_Allegro()
 
 void Renderer_Allegro::Present()
 {
-	// ImGui frame
+	// ImGui frame — guard against context not being ready
+	ImGuiContext *ctx = ImGui::GetCurrentContext();
+	if (!ctx)
+	{
+		al_flip_display();
+		return;
+	}
+
 	ImGui_ImplAllegro5_NewFrame();
 	ImGui::NewFrame();
 

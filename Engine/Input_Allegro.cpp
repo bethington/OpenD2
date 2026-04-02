@@ -192,8 +192,9 @@ namespace IN
 
 		while (al_get_next_event(queue, &ev))
 		{
-			// Pass all events to ImGui
-			ImGui_ImplAllegro5_ProcessEvent(&ev);
+			// Pass all events to ImGui (if context is ready)
+			if (ImGui::GetCurrentContext())
+				ImGui_ImplAllegro5_ProcessEvent(&ev);
 
 			if (gdwNumProcessedCommands >= MAX_INPUT_COMMANDS)
 				break;
@@ -207,17 +208,20 @@ namespace IN
 			}
 
 			// If ImGui wants input, don't pass to game
-			ImGuiIO &io = ImGui::GetIO();
-			if (io.WantCaptureMouse &&
-				(ev.type == ALLEGRO_EVENT_MOUSE_AXES ||
-				 ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN ||
-				 ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP))
-				continue;
-			if (io.WantCaptureKeyboard &&
-				(ev.type == ALLEGRO_EVENT_KEY_DOWN ||
-				 ev.type == ALLEGRO_EVENT_KEY_UP ||
-				 ev.type == ALLEGRO_EVENT_KEY_CHAR))
-				continue;
+			if (g_showImGuiOverlay && ImGui::GetCurrentContext())
+			{
+				ImGuiIO &io = ImGui::GetIO();
+				if (io.WantCaptureMouse &&
+					(ev.type == ALLEGRO_EVENT_MOUSE_AXES ||
+					 ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_DOWN ||
+					 ev.type == ALLEGRO_EVENT_MOUSE_BUTTON_UP))
+					continue;
+				if (io.WantCaptureKeyboard &&
+					(ev.type == ALLEGRO_EVENT_KEY_DOWN ||
+					 ev.type == ALLEGRO_EVENT_KEY_UP ||
+					 ev.type == ALLEGRO_EVENT_KEY_CHAR))
+					continue;
+			}
 
 			switch (ev.type)
 			{
