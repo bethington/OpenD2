@@ -644,10 +644,9 @@ void MapSelector::DrawPreview()
 		float halfW = tileW * scale / 2.0f;
 		float halfH = tileH * scale / 2.0f;
 
-		// Find bounding box of actual occupied tiles (not empty space)
+		// Find center of occupied tiles (non-empty cells) for positioning
 		float isoMinX = 1e9f, isoMaxX = -1e9f;
 		float isoMinY = 1e9f, isoMaxY = -1e9f;
-		bool hasAnyTile = false;
 
 		for (int ty = 0; ty < m_previewHeight; ty++)
 		{
@@ -664,51 +663,14 @@ void MapSelector::DrawPreview()
 				if (sx > isoMaxX) isoMaxX = sx;
 				if (sy < isoMinY) isoMinY = sy;
 				if (sy > isoMaxY) isoMaxY = sy;
-				hasAnyTile = true;
 			}
 		}
 
-		if (!hasAnyTile)
-		{
-			isoMinX = isoMaxX = isoMinY = isoMaxY = 0.0f;
-		}
-
-		// Re-scale to fit the actual occupied area
-		float occupiedW = isoMaxX - isoMinX + halfW * 2.0f;
-		float occupiedH = isoMaxY - isoMinY + halfH * 2.0f;
-		if (occupiedW > 0 && occupiedH > 0)
-		{
-			float scaleX2 = (float)(PREVIEW_W - 20) / occupiedW;
-			float scaleY2 = (float)(PREVIEW_H - 60) / occupiedH;
-			float newScale = (scaleX2 < scaleY2) ? scaleX2 : scaleY2;
-			// Only re-scale if it differs significantly
-			halfW = tileW * newScale / 2.0f;
-			halfH = tileH * newScale / 2.0f;
-
-			// Recalculate bounds with new scale
-			isoMinX = 1e9f; isoMaxX = -1e9f;
-			isoMinY = 1e9f; isoMaxY = -1e9f;
-			for (int ty = 0; ty < m_previewHeight; ty++)
-			{
-				for (int tx = 0; tx < m_previewWidth; tx++)
-				{
-					DS1Cell *cell = engine->DS1_GetCellAt(m_previewDS1, tx, ty, DS1Cell_Floor);
-					if (cell == nullptr) continue;
-					if (cell->prop1 == 0 && cell->prop2 == 0 && cell->prop3 == 0 && cell->prop4 == 0)
-						continue;
-					float sx = (float)(tx - ty) * halfW;
-					float sy = (float)(tx + ty) * halfH;
-					if (sx < isoMinX) isoMinX = sx;
-					if (sx > isoMaxX) isoMaxX = sx;
-					if (sy < isoMinY) isoMinY = sy;
-					if (sy > isoMaxY) isoMaxY = sy;
-				}
-			}
-		}
-
+		// Center of occupied area
 		float isoCenterX = (isoMinX + isoMaxX) / 2.0f;
 		float isoCenterY = (isoMinY + isoMaxY) / 2.0f;
 
+		// Center of preview panel
 		float panelCenterX = (float)PREVIEW_X + (float)PREVIEW_W / 2.0f;
 		float panelCenterY = (float)PREVIEW_Y + (float)(PREVIEW_H - 30) / 2.0f;
 
