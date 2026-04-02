@@ -148,16 +148,51 @@ void AllegroRenderObject::SetTokenHitClass(int hitclass)
 // =====================================================
 
 Renderer_Allegro::Renderer_Allegro(D2GameConfigStrc *pConfig, OpenD2ConfigStrc *pOpenConfig, ALLEGRO_DISPLAY *pDisplay)
-	: m_pDisplay(pDisplay), m_currentPalette(PAL_ACT1), m_numAllocated(0)
+	: m_pDisplay(pDisplay), m_pBuiltinFont(nullptr), m_currentPalette(PAL_ACT1), m_numAllocated(0)
 {
 	(void)pConfig; (void)pOpenConfig;
 	memset(m_objectInUse, 0, sizeof(m_objectInUse));
+
+	// Create built-in font for text rendering
+	m_pBuiltinFont = al_create_builtin_font();
+
 	Log::Print(PRIORITY_MESSAGE, "Renderer_Allegro initialized");
 }
 
 Renderer_Allegro::~Renderer_Allegro()
 {
+	if (m_pBuiltinFont)
+	{
+		al_destroy_font(m_pBuiltinFont);
+		m_pBuiltinFont = nullptr;
+	}
 	Log::Print(PRIORITY_MESSAGE, "Renderer_Allegro destroyed");
+}
+
+void Renderer_Allegro::DrawAlText(float x, float y, float r, float g, float b, float a, const char *text)
+{
+	if (m_pBuiltinFont && text)
+	{
+		al_set_target_backbuffer(m_pDisplay);
+		al_draw_text(m_pBuiltinFont, al_map_rgba_f(r, g, b, a),
+			x, y, ALLEGRO_ALIGN_LEFT, text);
+	}
+}
+
+void Renderer_Allegro::DrawTextF(float x, float y, float r, float g, float b, float a, const char *fmt, ...)
+{
+	if (m_pBuiltinFont && fmt)
+	{
+		char buffer[512];
+		va_list args;
+		va_start(args, fmt);
+		vsnprintf(buffer, sizeof(buffer), fmt, args);
+		va_end(args);
+
+		al_set_target_backbuffer(m_pDisplay);
+		al_draw_text(m_pBuiltinFont, al_map_rgba_f(r, g, b, a),
+			x, y, ALLEGRO_ALIGN_LEFT, buffer);
+	}
 }
 
 void Renderer_Allegro::Present()

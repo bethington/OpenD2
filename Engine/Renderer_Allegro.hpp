@@ -51,6 +51,7 @@ class Renderer_Allegro : public IRenderer
 {
 private:
 	ALLEGRO_DISPLAY *m_pDisplay;
+	ALLEGRO_FONT *m_pBuiltinFont;
 	D2Palettes m_currentPalette;
 
 	// Render object pool
@@ -62,6 +63,10 @@ private:
 public:
 	Renderer_Allegro(D2GameConfigStrc *pConfig, OpenD2ConfigStrc *pOpenConfig, ALLEGRO_DISPLAY *pDisplay);
 	~Renderer_Allegro();
+
+	// Allegro-specific text drawing (not part of IRenderer)
+	void DrawAlText(float x, float y, float r, float g, float b, float a, const char *text);
+	void DrawTextF(float x, float y, float r, float g, float b, float a, const char *fmt, ...);
 
 	// IRenderer interface
 	virtual void Present() override;

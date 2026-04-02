@@ -3,6 +3,49 @@
 #include <algorithm>
 #include <cstring>
 
+#ifdef USE_ALLEGRO5
+#include <allegro5/allegro.h>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_primitives.h>
+
+// Local font for MapSelector text rendering
+// (D2Client.dll can't call game.exe's Renderer_Allegro methods directly)
+static ALLEGRO_FONT *s_pMapSelectorFont = nullptr;
+
+static void EnsureFont()
+{
+	if (s_pMapSelectorFont == nullptr)
+	{
+		s_pMapSelectorFont = al_create_builtin_font();
+	}
+}
+
+static void DrawAlText(float x, float y, float r, float g, float b, float a, const char *text)
+{
+	EnsureFont();
+	if (s_pMapSelectorFont && text)
+	{
+		al_draw_text(s_pMapSelectorFont, al_map_rgba_f(r, g, b, a),
+			x, y, ALLEGRO_ALIGN_LEFT, text);
+	}
+}
+
+static void DrawAlTextF(float x, float y, float r, float g, float b, float a, const char *fmt, ...)
+{
+	EnsureFont();
+	if (s_pMapSelectorFont && fmt)
+	{
+		char buffer[512];
+		va_list args;
+		va_start(args, fmt);
+		vsnprintf(buffer, sizeof(buffer), fmt, args);
+		va_end(args);
+		al_draw_text(s_pMapSelectorFont, al_map_rgba_f(r, g, b, a),
+			x, y, ALLEGRO_ALIGN_LEFT, buffer);
+	}
+}
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -343,13 +386,30 @@ void MapSelector::DrawHeader()
 	engine->renderer->DrawRectangle(0, 0, 800, 40, 0, nullptr, titleBg);
 	engine->renderer->DrawRectangle(0, 38, 800, 2, 0, nullptr, titleBorder);
 
-	// Draw title text using a render object
-	// (Text rendering requires font resources, which may not be loaded yet)
-	// For now, we'll draw the count as part of the header area
-
-	// File count indicator in bottom-left
+	// Status bar at bottom
 	float countBg[] = {0.1f, 0.1f, 0.1f, 1.0f};
 	engine->renderer->DrawRectangle(0, 560, 800, 40, 0, nullptr, countBg);
+
+#ifdef USE_ALLEGRO5
+
+	DrawAlText(10, 12, 0.9f, 0.8f, 0.5f, 1.0f, "OpenD2 Map Viewer - DS1 File Browser");
+	DrawAlTextF(10, 570, 0.6f, 0.6f, 0.6f, 1.0f,
+		"%d files | Up/Down: Navigate | Enter: Load | Esc: Exit | PgUp/PgDn: Scroll",
+		(int)m_files.size());
+
+	// Show selected file info
+	if (m_selectedIndex >= 0 && m_selectedIndex < (int)m_files.size())
+	{
+		DrawAlTextF(400, 12, 0.7f, 0.7f, 0.7f, 1.0f, "[%d/%d]",
+			m_selectedIndex + 1, (int)m_files.size());
+
+		if (m_previewDS1 != INVALID_HANDLE)
+		{
+			DrawAlTextF(500, 12, 0.5f, 0.7f, 0.5f, 1.0f, "Size: %dx%d",
+				m_previewWidth, m_previewHeight);
+		}
+	}
+#endif
 }
 
 void MapSelector::DrawFileList()
@@ -363,6 +423,10 @@ void MapSelector::DrawFileList()
 	engine->renderer->DrawRectangle((float)LIST_X - 2, (float)LIST_Y - 2,
 		(float)LIST_W + 4, (float)(m_visibleRows * ROW_H) + 4, 0, nullptr, listBg);
 
+#ifdef USE_ALLEGRO5
+
+#endif
+
 	std::string lastGroup;
 
 	for (int i = 0; i < m_visibleRows && (m_scrollOffset + i) < numFiles; i++)
@@ -372,12 +436,22 @@ void MapSelector::DrawFileList()
 
 		float y = (float)(LIST_Y + i * ROW_H);
 
-		// Draw group separator if act changed
+		// Draw group header if act changed
 		if (entry.actGroup != lastGroup)
 		{
-			float groupColor[] = {0.4f, 0.35f, 0.2f, 1.0f};
-			engine->renderer->DrawRectangle((float)LIST_X, y, (float)LIST_W, 2, 0, nullptr, groupColor);
+			float groupBg[] = {0.12f, 0.1f, 0.06f, 1.0f};
+			engine->renderer->DrawRectangle((float)LIST_X, y, (float)LIST_W, (float)ROW_H, 0, nullptr, groupBg);
+
+#ifdef USE_ALLEGRO5
+			DrawAlText((float)LIST_X + 4, y + 3, 0.8f, 0.65f, 0.3f, 1.0f, entry.actGroup.c_str());
+#endif
 			lastGroup = entry.actGroup;
+
+			// This row is used for the group header, advance
+			i++;
+			if (i >= m_visibleRows)
+				break;
+			y = (float)(LIST_Y + i * ROW_H);
 		}
 
 		// Highlight selected row
@@ -391,21 +465,19 @@ void MapSelector::DrawFileList()
 			engine->renderer->DrawRectangle((float)LIST_X, y, 3, (float)ROW_H, 0, nullptr, barColor);
 		}
 
-		// Draw row text placeholder (colored rectangles representing text)
-		// Each character is roughly 7px wide, 12px tall
-		float textColor[] = {0.7f, 0.7f, 0.7f, 0.9f};
+#ifdef USE_ALLEGRO5
+		// Draw the filename with text
 		if (fileIndex == m_selectedIndex)
 		{
-			textColor[0] = 1.0f;
-			textColor[1] = 0.9f;
-			textColor[2] = 0.6f;
+			DrawAlText((float)LIST_X + 8, y + 3, 1.0f, 0.9f, 0.6f, 1.0f,
+				entry.relativePath.c_str());
 		}
-
-		// Draw a thin line to represent the filename (proportional to name length)
-		float textW = (float)(entry.relativePath.length() * 5);
-		if (textW > LIST_W - 10)
-			textW = (float)LIST_W - 10;
-		engine->renderer->DrawRectangle((float)LIST_X + 8, y + 4, textW, 10, 0, nullptr, textColor);
+		else
+		{
+			DrawAlText((float)LIST_X + 8, y + 3, 0.65f, 0.65f, 0.65f, 0.9f,
+				entry.relativePath.c_str());
+		}
+#endif
 	}
 
 	// Draw scrollbar
@@ -521,18 +593,24 @@ void MapSelector::DrawPreview()
 
 		// Draw map info
 		float infoBg[] = {0.1f, 0.1f, 0.1f, 0.8f};
-		engine->renderer->DrawRectangle((float)PREVIEW_X + 5, (float)(PREVIEW_Y + PREVIEW_H - 25),
-			150, 20, 0, nullptr, infoBg);
+		engine->renderer->DrawRectangle((float)PREVIEW_X + 5, (float)(PREVIEW_Y + PREVIEW_H - 30),
+			(float)PREVIEW_W - 10, 25, 0, nullptr, infoBg);
 
-		// Size indicator (proportional rectangles)
-		float sizeColor[] = {0.6f, 0.6f, 0.6f, 1.0f};
-		float sizeW = (float)m_previewWidth * 2.0f;
-		if (sizeW > 100) sizeW = 100;
-		engine->renderer->DrawRectangle((float)PREVIEW_X + 10, (float)(PREVIEW_Y + PREVIEW_H - 20),
-			sizeW, 5, 0, nullptr, sizeColor);
-		engine->renderer->DrawRectangle((float)PREVIEW_X + 10, (float)(PREVIEW_Y + PREVIEW_H - 12),
-			(float)m_previewHeight * 2.0f > 100 ? 100 : (float)m_previewHeight * 2.0f,
-			5, 0, nullptr, sizeColor);
+#ifdef USE_ALLEGRO5
+	
+		DrawAlTextF((float)PREVIEW_X + 10, (float)(PREVIEW_Y + PREVIEW_H - 25),
+			0.7f, 0.7f, 0.7f, 1.0f, "Map Size: %d x %d tiles",
+			m_previewWidth, m_previewHeight);
+#endif
+	}
+	else
+	{
+#ifdef USE_ALLEGRO5
+		// No preview loaded - show instruction text
+	
+		DrawAlText((float)PREVIEW_X + 50, (float)(PREVIEW_Y + PREVIEW_H / 2 - 8),
+			0.4f, 0.4f, 0.4f, 1.0f, "Select a .ds1 file to preview");
+#endif
 	}
 }
 

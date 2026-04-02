@@ -3,6 +3,11 @@
 #include <vector>
 #include <string>
 
+// Forward declare for text rendering
+#ifdef USE_ALLEGRO5
+class Renderer_Allegro;
+#endif
+
 /*
  *	MapSelector - DS1 file browser with scrollable list and preview
  *	Launched when +mapviewer command-line flag is set.
