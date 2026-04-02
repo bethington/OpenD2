@@ -32,6 +32,11 @@ target_compile_definitions(D2Client PRIVATE D2CLIENT)
 
 if(USE_ALLEGRO5)
     target_compile_definitions(D2Client PRIVATE USE_ALLEGRO5 ALLEGRO_NO_MAGIC_MAIN)
+    # Link against EditorLib for the editor's rendering pipeline
+    target_link_libraries(D2Client EditorLib)
+    target_include_directories(D2Client PRIVATE
+        "${CMAKE_SOURCE_DIR}/Engine/EditorCompat"
+    )
     if(WIN32)
         set(ALLEGRO5_LIB_DIR "${CMAKE_SOURCE_DIR}/Libraries/allegro5/lib/win32")
         target_include_directories(D2Client PRIVATE
@@ -41,6 +46,9 @@ if(USE_ALLEGRO5)
             "${ALLEGRO5_LIB_DIR}/allegro.lib"
             "${ALLEGRO5_LIB_DIR}/allegro_font.lib"
             "${ALLEGRO5_LIB_DIR}/allegro_primitives.lib"
+            "${ALLEGRO5_LIB_DIR}/allegro_image.lib"
+            "${ALLEGRO5_LIB_DIR}/allegro_audio.lib"
+            "${ALLEGRO5_LIB_DIR}/allegro_acodec.lib"
         )
     else()
         find_package(Allegro5 REQUIRED)

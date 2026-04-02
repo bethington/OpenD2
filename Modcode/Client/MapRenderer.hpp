@@ -60,6 +60,7 @@ public:
 private:
 	void LoadDT1sFromDS1();
 	void BuildTileLookup();
+	void BuildTileLookupFromEditor();
 	const TileEntry *FindTile(long orientation, long mainIndex, long subIndex);
 
 #ifdef USE_ALLEGRO5

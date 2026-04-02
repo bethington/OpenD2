@@ -1183,58 +1183,88 @@ void misc_search_walk_infos(int ds1_idx, int x, int y, UBYTE *dsttable)
 // ==========================================================================
 // load a file from mpq
 //    first try in the mod directory, if not found in the 1st mpq it can
+// Base path set by editor_bridge_set_basepath() in editor_globals.c
+extern char editor_bridge_basepath[512];
+
 int misc_load_mpq_file(char *filename, char **buffer, long *buf_len, int output)
 {
-   int i, entry, max;
+   char fullPath[1024];
+   const char *dataPos = NULL;
+   const char *p;
+   FILE *f;
+   long fileSize;
 
-   // convert slash ('/') to backslash ('\\')
-   // seems the mpq library expect backslash and not slash as directory separator
-   strcpy(glb_ds1edit.strtmp, filename);
-   max = strlen(glb_ds1edit.strtmp);
-   for (i = 0; i < max; i++)
-   {
-      if (glb_ds1edit.strtmp[i] == '/')
-         glb_ds1edit.strtmp[i] = '\\';
-   }
+   if (filename == NULL || buffer == NULL || buf_len == NULL)
+      return -1;
 
-   // 1st try in mod directory
-   for (i = 0; i < MAX_MOD_DIR; i++)
+   *buffer = NULL;
+   *buf_len = 0;
+
+   // Find "data" in filename to strip any Blizzard-internal prefix
+   for (p = filename; *p; p++)
    {
-      entry = mod_load_in_mem(
-          glb_config.mod_dir[i],
-          glb_ds1edit.strtmp,
-          buffer,
-          buf_len);
-      if (entry != -1)
+      if ((*p == 'd' || *p == 'D') &&
+          _strnicmp(p, "data", 4) == 0)
       {
-         if (output)
-            printf(", found in %s\n", glb_config.mod_dir[i]);
-         return entry;
-      }
-   }
-
-   // 2nd try, in a mpq
-   for (i = 0; i < MAX_MPQ_FILE; i++)
-   {
-      if (glb_mpq_struct[i].is_open != FALSE)
-      {
-         glb_mpq = &glb_mpq_struct[i];
-         entry = mpq_batch_load_in_mem(
-             glb_ds1edit.strtmp,
-             buffer,
-             buf_len,
-             output);
-         if (entry != -1)
+         const char *q = p + 4;
+         if (*q == '\\' || *q == '/')
          {
-            if (output)
-               printf(", found in %s\n", glb_config.mpq_file[i]);
-            return entry;
+            dataPos = p;
+            break;
          }
       }
    }
 
-   // not found
-   return -1;
+   if (dataPos)
+      snprintf(fullPath, sizeof(fullPath), "%s%s", editor_bridge_basepath, dataPos);
+   else
+      snprintf(fullPath, sizeof(fullPath), "%s%s", editor_bridge_basepath, filename);
+
+   // Normalize slashes
+   {
+      char *pp;
+      for (pp = fullPath; *pp; pp++)
+         if (*pp == '/') *pp = '\\';
+   }
+
+   if (output)
+      printf("Loading: %s", fullPath);
+
+   f = fopen(fullPath, "rb");
+   if (f == NULL)
+   {
+      if (output)
+         printf(" - NOT FOUND\n");
+      return -1;
+   }
+
+   fseek(f, 0, SEEK_END);
+   fileSize = ftell(f);
+   fseek(f, 0, SEEK_SET);
+
+   if (fileSize <= 0)
+   {
+      fclose(f);
+      if (output)
+         printf(" - EMPTY\n");
+      return -1;
+   }
+
+   *buffer = (char *)malloc(fileSize);
+   if (*buffer == NULL)
+   {
+      fclose(f);
+      return -1;
+   }
+
+   fread(*buffer, 1, fileSize, f);
+   fclose(f);
+   *buf_len = fileSize;
+
+   if (output)
+      printf(" - OK (%ld bytes)\n", fileSize);
+
+   return 0;
 }
 
 // ==========================================================================
