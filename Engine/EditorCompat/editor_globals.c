@@ -203,6 +203,22 @@ int editor_bridge_load_ds1(const char *ds1RelativePath)
 				if (fi < DT1_IN_DS1_MAX)
 					glb_ds1[ds1_idx].dt1_idx[fi] = dt1_idx;
 				numDT1sLoaded++;
+
+				// Verify: check if tiles have pixel data
+				if (glb_dt1[dt1_idx].block_zoom[0] != NULL && glb_dt1[dt1_idx].block_num > 0)
+				{
+					BITMAP *testBmp = glb_dt1[dt1_idx].block_zoom[0][0];
+					if (testBmp && testBmp->line)
+					{
+						int nz = 0;
+						int y2, x2;
+						for (y2 = 0; y2 < testBmp->h; y2++)
+							for (x2 = 0; x2 < testBmp->w; x2++)
+								if (testBmp->line[y2][x2] != 0) nz++;
+						fprintf(stderr, "EditorBridge: DT1[%d] blk0 %dx%d nonzero=%d\n",
+							dt1_idx, testBmp->w, testBmp->h, nz);
+					}
+				}
 			}
 		}
 	}

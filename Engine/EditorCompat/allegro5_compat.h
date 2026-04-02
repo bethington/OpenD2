@@ -437,6 +437,10 @@ int palette_color(int index);
 void create_color_table(COLOR_MAP *table, const PALETTE pal, void (*callback)(const PALETTE, int, int, RGB *), void (*progress)(int));
 void create_trans_table(COLOR_MAP *table, const PALETTE pal, int r, int g, int b, void (*progress)(int));
 
+// Pixel access (8-bit line buffer)
+void putpixel(BITMAP *bmp, int x, int y, int color);
+int getpixel(BITMAP *bmp, int x, int y);
+
 // Allegro 4 sprite drawing functions (stubs - implemented properly in Phase 3B)
 void draw_sprite(BITMAP *dest, BITMAP *sprite, int x, int y);
 void draw_trans_sprite(BITMAP *dest, BITMAP *sprite, int x, int y);

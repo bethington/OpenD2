@@ -302,15 +302,25 @@ void clear_bitmap_a4_compat(BITMAP *bmp)
 
 void blit_a4_compat(BITMAP *source, BITMAP *dest, int source_x, int source_y, int dest_x, int dest_y, int width, int height)
 {
-	if (!source || !dest || !source->al_bmp || !dest->al_bmp)
+	// Operate on 8-bit line[][] buffers
+	if (!source || !dest || !source->line || !dest->line)
 		return;
 
-	ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
-	al_set_target_bitmap(dest->al_bmp);
+	for (int y = 0; y < height; y++)
+	{
+		int sy = source_y + y;
+		int dy = dest_y + y;
+		if (sy < 0 || sy >= source->h || dy < 0 || dy >= dest->h) continue;
 
-	al_draw_bitmap_region(source->al_bmp, source_x, source_y, width, height, dest_x, dest_y, 0);
+		for (int x = 0; x < width; x++)
+		{
+			int sx = source_x + x;
+			int dx = dest_x + x;
+			if (sx < 0 || sx >= source->w || dx < 0 || dx >= dest->w) continue;
 
-	al_set_target_bitmap(old_target);
+			dest->line[dy][dx] = source->line[sy][sx];
+		}
+	}
 }
 
 void masked_blit_a4_compat(BITMAP *source, BITMAP *dest, int source_x, int source_y, int dest_x, int dest_y, int width, int height)
@@ -321,15 +331,29 @@ void masked_blit_a4_compat(BITMAP *source, BITMAP *dest, int source_x, int sourc
 
 void stretch_blit_a4_compat(BITMAP *source, BITMAP *dest, int source_x, int source_y, int source_w, int source_h, int dest_x, int dest_y, int dest_w, int dest_h)
 {
-	if (!source || !dest || !source->al_bmp || !dest->al_bmp)
+	// Operate on 8-bit line[][] buffers, not al_bmp
+	if (!source || !dest || !source->line || !dest->line)
+		return;
+	if (source_w <= 0 || source_h <= 0 || dest_w <= 0 || dest_h <= 0)
 		return;
 
-	ALLEGRO_BITMAP *old_target = al_get_target_bitmap();
-	al_set_target_bitmap(dest->al_bmp);
+	for (int dy = 0; dy < dest_h; dy++)
+	{
+		int sy = source_y + (dy * source_h) / dest_h;
+		if (sy < 0 || sy >= source->h) continue;
+		int dpy = dest_y + dy;
+		if (dpy < 0 || dpy >= dest->h) continue;
 
-	al_draw_scaled_bitmap(source->al_bmp, source_x, source_y, source_w, source_h, dest_x, dest_y, dest_w, dest_h, 0);
+		for (int dx = 0; dx < dest_w; dx++)
+		{
+			int sx = source_x + (dx * source_w) / dest_w;
+			if (sx < 0 || sx >= source->w) continue;
+			int dpx = dest_x + dx;
+			if (dpx < 0 || dpx >= dest->w) continue;
 
-	al_set_target_bitmap(old_target);
+			dest->line[dpy][dpx] = source->line[sy][sx];
+		}
+	}
 }
 
 // File I/O functions

@@ -73,6 +73,7 @@ static void EnsureFont()
 #endif
 
 MapRenderer *gpMapRenderer = nullptr;
+char s_tileDebug[256] = "";
 
 MapRenderer::MapRenderer()
 	: m_ds1Handle(INVALID_HANDLE), m_mapWidth(0), m_mapHeight(0), m_act(1),
@@ -220,6 +221,27 @@ ALLEGRO_BITMAP *MapRenderer::DecodeTileBitmap(handle dt1Handle, int blockIndex, 
 	{
 		m_tileCache[cacheKey] = nullptr;
 		return nullptr;
+	}
+
+	// DEBUG: count non-zero pixels and also check raw data pointer
+	static int dbgChecked = 0;
+	if (dbgChecked < 1)
+	{
+		int nonZero = 0;
+		int nonZeroData = 0;
+		for (int y = 0; y < srcBmp->h; y++)
+			for (int x = 0; x < srcBmp->w; x++)
+				if (srcBmp->line[y][x] != 0) nonZero++;
+		// Also check via data pointer directly
+		if (srcBmp->data)
+			for (int i = 0; i < srcBmp->w * srcBmp->h; i++)
+				if (srcBmp->data[i] != 0) nonZeroData++;
+		snprintf(s_tileDebug, sizeof(s_tileDebug),
+			"TileDbg: dt1=%d blk=%d %dx%d line_nz=%d data_nz=%d data=%p line=%p line[0]=%p",
+			dt1Idx, blockIndex, srcBmp->w, srcBmp->h, nonZero, nonZeroData,
+			(void*)srcBmp->data, (void*)srcBmp->line,
+			srcBmp->line ? (void*)srcBmp->line[0] : NULL);
+		dbgChecked++;
 	}
 
 	// Convert the 8-bit palette-indexed BITMAP_A4 to an ALLEGRO_BITMAP
@@ -437,6 +459,10 @@ void MapRenderer::Draw()
 			(int)m_tileLookup.size(), dbgDrawn, dbgEmpty, dbgNoEntry,
 			m_cameraX, m_cameraY);
 		al_draw_text(s_pFont, al_map_rgb(200, 180, 120), 10, 8, ALLEGRO_ALIGN_LEFT, info);
+
+		// Show tile pixel debug info
+		if (s_tileDebug[0])
+			al_draw_text(s_pFont, al_map_rgb(255, 100, 100), 10, 20, ALLEGRO_ALIGN_LEFT, s_tileDebug);
 	}
 
 	engine->renderer->Present();
