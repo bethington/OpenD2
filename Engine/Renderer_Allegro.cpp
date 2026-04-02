@@ -656,23 +656,58 @@ void AllegroRenderObject::Draw()
 	if (m_type == RT_NONE || !m_pRenderer)
 		return;
 
-	// Set blend mode
-	if (m_drawMode == 3)
+	// Set blend mode and tint based on draw mode
+	// D2 draw modes approximate the PL2 lookup table effects:
+	//   0: Normal alpha blending
+	//   1: 75% opaque (COF trans_b=0, pTrans75)
+	//   2: 50% opaque (COF trans_b=1, pTrans50)
+	//   3: Additive/screen blend (fire, lightning effects)
+	//   4: Font/text rendering
+	//   5: Shadow (dark translucent overlay)
+	//   6: 25% opaque (COF trans_b=2, pTrans25)
+
+	float effectAlpha = m_colorA;
+
+	switch (m_drawMode)
 	{
-		// Additive blending (fire effects)
+	case 1: // 75% opaque
+		effectAlpha *= 0.75f;
+		al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+		break;
+	case 2: // 50% opaque
+		effectAlpha *= 0.50f;
+		al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+		break;
+	case 3: // Additive blend (fire/lightning)
 		al_set_blender(ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ONE);
+		break;
+	case 5: // Shadow
+		effectAlpha *= 0.40f;
+		al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+		// Shadows are drawn dark
+		break;
+	case 6: // 25% opaque
+		effectAlpha *= 0.25f;
+		al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+		break;
+	default: // 0, 4, and anything else: standard alpha
+		al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+		break;
+	}
+
+	ALLEGRO_COLOR tint;
+	if (m_drawMode == 5) // Shadow: dark tint
+	{
+		tint = al_map_rgba_f(0.0f, 0.0f, 0.0f, effectAlpha);
 	}
 	else
 	{
-		// Standard alpha blending
-		al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
+		tint = al_map_rgba_f(
+			m_colorR * effectAlpha,
+			m_colorG * effectAlpha,
+			m_colorB * effectAlpha,
+			effectAlpha);
 	}
-
-	ALLEGRO_COLOR tint = al_map_rgba_f(
-		m_colorR * m_colorA,
-		m_colorG * m_colorA,
-		m_colorB * m_colorA,
-		m_colorA);
 
 	switch (m_type)
 	{
