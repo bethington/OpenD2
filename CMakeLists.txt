@@ -57,12 +57,23 @@ if(BUILD_GAME)
 			Engine/EditorCompat/mpq/*.h
 		)
 
+		# Exclude main.c (has its own entry point) from EditorLib
+		list(REMOVE_ITEM EDITORCOMPAT_SRC
+			${CMAKE_CURRENT_SOURCE_DIR}/Engine/EditorCompat/main.c
+		)
+
 		add_library(EditorLib STATIC ${EDITORCOMPAT_SRC} ${EDITORCOMPAT_MPQ_SRC})
 		set_target_properties(EditorLib PROPERTIES LINKER_LANGUAGE C)
 		target_compile_definitions(EditorLib PRIVATE
 			_CRT_SECURE_NO_WARNINGS
-			ALLEGRO_NO_MAGIC_MAIN
 		)
+
+		# EditorLib uses Allegro 4 (from d2-ds1-edit)
+		set(ALLEGRO4_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/allegro4/include")
+		set(ALLEGRO4_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/allegro4/lib")
+		set(ALLEGRO4_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Libraries/allegro4/bin")
+		target_include_directories(EditorLib PRIVATE ${ALLEGRO4_INCLUDE_DIR})
+		target_link_libraries(EditorLib "${ALLEGRO4_LIB_DIR}/alleg44.lib")
 
 		if(WIN32)
 			list(REMOVE_ITEM ENGINE_SRC ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Platform_Linux.cpp)
@@ -101,9 +112,9 @@ if(BUILD_GAME)
 			set(LIBRARY_SRC "")
 		endif()
 
-		# EditorLib include dirs
+		# EditorLib include dirs (uses Allegro 4, not 5)
 		target_include_directories(EditorLib PRIVATE
-			${ALLEGRO5_INCLUDE_DIR}
+			${ALLEGRO4_INCLUDE_DIR}
 			${CMAKE_CURRENT_SOURCE_DIR}/Engine/EditorCompat
 		)
 
@@ -143,6 +154,12 @@ if(BUILD_GAME)
 			add_custom_command(TARGET game POST_BUILD
 				COMMAND ${CMAKE_COMMAND} -E copy_directory
 				"${ALLEGRO5_BIN_DIR}"
+				"$<TARGET_FILE_DIR:game>"
+			)
+			# Copy Allegro 4 DLL (for EditorLib)
+			add_custom_command(TARGET game POST_BUILD
+				COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				"${ALLEGRO4_BIN_DIR}/alleg44.dll"
 				"$<TARGET_FILE_DIR:game>"
 			)
 		else()
