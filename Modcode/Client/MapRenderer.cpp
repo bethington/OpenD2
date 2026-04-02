@@ -345,6 +345,11 @@ void MapRenderer::Draw()
 			{
 				al_draw_bitmap(tileBmp, sx, sy, 0);
 				dbgDrawn++;
+
+				// DEBUG: draw green outline at each drawn tile so we can see positioning
+				al_draw_rectangle(sx, sy, sx + al_get_bitmap_width(tileBmp),
+					sy + al_get_bitmap_height(tileBmp),
+					al_map_rgba(0, 255, 0, 100), 1.0f);
 			}
 		}
 	}
