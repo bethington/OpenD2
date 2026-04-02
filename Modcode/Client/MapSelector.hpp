@@ -36,6 +36,8 @@ public:
 	void Draw();
 	bool HandleKeyDown(DWORD keyCode);
 	bool HandleMouseDown(DWORD x, DWORD y);
+	void HandleMouseMove(DWORD x, DWORD y);
+	void HandleMouseWheel(int delta);
 
 	// State
 	bool IsActive() const { return m_bActive; }
@@ -54,6 +56,8 @@ private:
 	int m_selectedIndex;
 	int m_scrollOffset;
 	int m_visibleRows;
+	int m_hoverIndex;
+	DWORD m_mouseX, m_mouseY;
 	bool m_bActive;
 	bool m_bSelectionMade;
 

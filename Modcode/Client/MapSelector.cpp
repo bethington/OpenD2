@@ -57,6 +57,7 @@ MapSelector *gpMapSelector = nullptr;
 
 MapSelector::MapSelector()
 	: m_selectedIndex(0), m_scrollOffset(0), m_visibleRows(35),
+	  m_hoverIndex(-1), m_mouseX(0), m_mouseY(0),
 	  m_bActive(true), m_bSelectionMade(false),
 	  m_previewDS1(INVALID_HANDLE), m_previewWidth(0), m_previewHeight(0),
 	  m_lastPreviewIndex(-1)
@@ -378,6 +379,54 @@ bool MapSelector::HandleMouseDown(DWORD x, DWORD y)
 	return false;
 }
 
+void MapSelector::HandleMouseMove(DWORD x, DWORD y)
+{
+	m_mouseX = x;
+	m_mouseY = y;
+
+	// Update hover index if mouse is over the file list
+	if ((int)x >= LIST_X && (int)x <= LIST_X + LIST_W &&
+		(int)y >= LIST_Y && (int)y <= LIST_Y + m_visibleRows * ROW_H)
+	{
+		int hoveredRow = ((int)y - LIST_Y) / ROW_H;
+		int hoveredIndex = m_scrollOffset + hoveredRow;
+		if (hoveredIndex >= 0 && hoveredIndex < (int)m_files.size())
+			m_hoverIndex = hoveredIndex;
+		else
+			m_hoverIndex = -1;
+	}
+	else
+	{
+		m_hoverIndex = -1;
+	}
+}
+
+void MapSelector::HandleMouseWheel(int delta)
+{
+	if (!m_bActive)
+		return;
+
+	int numFiles = (int)m_files.size();
+	if (numFiles <= m_visibleRows)
+		return;
+
+	// Scroll 3 rows per wheel tick
+	m_scrollOffset -= delta * 3;
+
+	if (m_scrollOffset < 0)
+		m_scrollOffset = 0;
+	if (m_scrollOffset > numFiles - m_visibleRows)
+		m_scrollOffset = numFiles - m_visibleRows;
+
+	// Keep selection visible
+	if (m_selectedIndex < m_scrollOffset)
+		m_selectedIndex = m_scrollOffset;
+	if (m_selectedIndex >= m_scrollOffset + m_visibleRows)
+		m_selectedIndex = m_scrollOffset + m_visibleRows - 1;
+
+	LoadPreview(m_selectedIndex);
+}
+
 void MapSelector::DrawHeader()
 {
 	// Draw title bar
@@ -452,6 +501,13 @@ void MapSelector::DrawFileList()
 			if (i >= m_visibleRows)
 				break;
 			y = (float)(LIST_Y + i * ROW_H);
+		}
+
+		// Highlight hovered row
+		if (fileIndex == m_hoverIndex && fileIndex != m_selectedIndex)
+		{
+			float hoverColor[] = {0.15f, 0.13f, 0.08f, 1.0f};
+			engine->renderer->DrawRectangle((float)LIST_X, y, (float)LIST_W, (float)ROW_H, 0, nullptr, hoverColor);
 		}
 
 		// Highlight selected row

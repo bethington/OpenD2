@@ -139,22 +139,27 @@ static void D2Client_HandleInput()
 		// MapSelector intercepts input when active
 		if (gpMapSelector != nullptr && gpMapSelector->IsActive())
 		{
-			if (pCmd->cmdType == IN_KEYDOWN || pCmd->cmdType == IN_KEYUP)
+			if (pCmd->cmdType == IN_KEYDOWN)
 			{
 				if (gpMapSelector->HandleKeyDown(pCmd->cmdData.button.buttonID))
-					continue;
-			}
-			else if (pCmd->cmdType == IN_MOUSEDOWN)
-			{
-				cl.dwMouseX = pCmd->cmdData.motion.x;
-				cl.dwMouseY = pCmd->cmdData.motion.y;
-				if (gpMapSelector->HandleMouseDown(cl.dwMouseX, cl.dwMouseY))
 					continue;
 			}
 			else if (pCmd->cmdType == IN_MOUSEMOVE)
 			{
 				cl.dwMouseX = pCmd->cmdData.motion.x;
 				cl.dwMouseY = pCmd->cmdData.motion.y;
+				gpMapSelector->HandleMouseMove(cl.dwMouseX, cl.dwMouseY);
+				continue;
+			}
+			else if (pCmd->cmdType == IN_MOUSEDOWN)
+			{
+				// Mouse position already tracked via MOUSEMOVE
+				if (gpMapSelector->HandleMouseDown(cl.dwMouseX, cl.dwMouseY))
+					continue;
+			}
+			else if (pCmd->cmdType == IN_MOUSEWHEEL)
+			{
+				gpMapSelector->HandleMouseWheel(pCmd->cmdData.motion.y);
 				continue;
 			}
 			else if (pCmd->cmdType == IN_QUIT)
