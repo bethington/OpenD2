@@ -450,12 +450,26 @@ void AllegroRenderObject::AttachAnimationResource(IGraphicsReference *ref, bool 
 
 ///////////////////////////////////////////////////////
 //
-//	AttachTokenResource — stub (tokens not yet supported)
+//	AttachTokenResource — basic single-layer rendering
+//	Loads the torso (TR) DCC for the token's current mode/hitclass
+//	and displays as an animation. Full COF multi-layer composition deferred.
 //
 
 void AllegroRenderObject::AttachTokenResource(ITokenReference *ref)
 {
-	(void)ref;
+	Reset();
+	if (!ref || !m_pRenderer)
+		return;
+
+	// Get the torso graphic for TN (town neutral) / HTH (hand to hand) with "lit" armor
+	IGraphicsReference *trGraphic = ref->GetTokenGraphic(COMP_TORSO, WC_HTH, PLRMODE_TN, "lit");
+	if (!trGraphic)
+		return;
+
+	// Use the DCC runtime decode path via AttachAnimationResource
+	// trGraphic is a DCCReference — AttachAnimationResource handles DCC decode
+	AttachAnimationResource(trGraphic, true);
+	m_animFramerate = 12.0f; // Town neutral is slow idle
 }
 
 ///////////////////////////////////////////////////////
