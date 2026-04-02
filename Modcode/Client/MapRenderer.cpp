@@ -308,7 +308,13 @@ void MapRenderer::Draw()
 			long subIndex = cell->prop2;
 
 			const TileEntry *entry = FindTile(0, mainIndex, subIndex);
-			if (entry == nullptr) continue;
+			if (entry == nullptr)
+			{
+				// No matching DT1 tile — draw debug marker
+				float dbg[] = {0.3f, 0.2f, 0.1f, 0.5f};
+				engine->renderer->DrawRectangle(sx + 60, sy + 30, 40, 20, 0, nullptr, dbg);
+				continue;
+			}
 
 			ALLEGRO_BITMAP *tileBmp = DecodeTileBitmap(entry->dt1Handle, entry->blockIndex, act);
 			if (tileBmp)
@@ -392,11 +398,12 @@ void MapRenderer::Draw()
 	{
 		al_draw_filled_rectangle(0, 0, (float)SCREEN_W, 24, al_map_rgba(0, 0, 0, 180));
 
-		char info[256];
+		char info[512];
 		snprintf(info, sizeof(info),
-			"Map: %dx%d | Act %d | DT1s: %d | Tiles: %d | Arrows/WASD: Scroll | Home: Center | Esc: Back",
+			"Map: %dx%d | Act %d | DT1s: %d | Tiles: %d | Cam: %.0f,%.0f | Arrows/WASD | Home | Esc: Back",
 			m_mapWidth, m_mapHeight, m_act,
-			(int)m_loadedDT1s.size(), (int)m_tileLookup.size());
+			(int)m_loadedDT1s.size(), (int)m_tileLookup.size(),
+			m_cameraX, m_cameraY);
 		al_draw_text(s_pFont, al_map_rgb(200, 180, 120), 10, 6, ALLEGRO_ALIGN_LEFT, info);
 	}
 
