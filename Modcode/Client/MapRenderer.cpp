@@ -269,10 +269,44 @@ ALLEGRO_BITMAP *MapRenderer::DecodeTileBitmap(handle dt1Handle, int blockIndex, 
 
 void MapRenderer::CenterCamera()
 {
-	float centerIsoX = (float)(m_mapWidth / 2 - m_mapHeight / 2) * HALF_W;
-	float centerIsoY = (float)(m_mapWidth / 2 + m_mapHeight / 2) * HALF_H;
-	m_cameraX = centerIsoX - SCREEN_W / 2.0f;
-	m_cameraY = centerIsoY - SCREEN_H / 2.0f;
+	// Scan occupied floor tiles to find true center
+	float minX = 1e9f, maxX = -1e9f, minY = 1e9f, maxY = -1e9f;
+	bool hasAny = false;
+
+	for (int ty = 0; ty < m_mapHeight; ty++)
+	{
+		for (int tx = 0; tx < m_mapWidth; tx++)
+		{
+			DS1Cell *cell = engine->DS1_GetCellAt(m_ds1Handle, tx, ty, DS1Cell_Floor);
+			if (cell == nullptr) continue;
+			if (cell->prop1 == 0 && cell->prop2 == 0 && cell->prop3 == 0 && cell->prop4 == 0)
+				continue;
+
+			float sx = (float)(tx - ty) * HALF_W;
+			float sy = (float)(tx + ty) * HALF_H;
+			if (sx < minX) minX = sx;
+			if (sx > maxX) maxX = sx;
+			if (sy < minY) minY = sy;
+			if (sy > maxY) maxY = sy;
+			hasAny = true;
+		}
+	}
+
+	if (hasAny)
+	{
+		float centerX = (minX + maxX) / 2.0f;
+		float centerY = (minY + maxY) / 2.0f;
+		m_cameraX = centerX - SCREEN_W / 2.0f;
+		m_cameraY = centerY - SCREEN_H / 2.0f;
+	}
+	else
+	{
+		// Fallback to grid center
+		float centerIsoX = (float)(m_mapWidth / 2 - m_mapHeight / 2) * HALF_W;
+		float centerIsoY = (float)(m_mapWidth / 2 + m_mapHeight / 2) * HALF_H;
+		m_cameraX = centerIsoX - SCREEN_W / 2.0f;
+		m_cameraY = centerIsoY - SCREEN_H / 2.0f;
+	}
 }
 
 void MapRenderer::ScrollCamera(float dx, float dy)
